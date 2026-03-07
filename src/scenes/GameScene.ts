@@ -266,17 +266,13 @@ export class GameScene extends Phaser.Scene {
 
   private makeCars() {
     const vehicles = [
-      "ambulance","bus","bus_school","firetruck","police","sedan","sedan_blue",
-      "sedan_vintage","sports_red","sports_green","sports_yellow","sports_convertible",
-      "station","suv","suv_large","suv_green","suv_travel","taxi","towtruck",
-      "transport","truck","truckcabin","truckdelivery","van","van_large","vintage",
-      "rounded_red","rounded_green","rounded_yellow","kart","hotdog","convertible",
+      "bus", "sedan", "taxi", "truck", "suv", "van", "firetruck", "sports_red", "sedan_vintage", "truckcabin",
     ];
-    const spacing = Math.floor(LEVEL_WIDTH / vehicles.length);
+    const spacing = Math.floor((LEVEL_WIDTH - 600) / vehicles.length);
     const carDefs = vehicles.map((v, i) => ({
-      x: 400 + i * spacing,
+      x: 500 + i * spacing,
       key: `car_${v}`,
-      speed: Phaser.Math.Between(70, 190),
+      speed: Phaser.Math.Between(80, 160),
     }));
 
     carDefs.forEach(({ x, key, speed }) => {
