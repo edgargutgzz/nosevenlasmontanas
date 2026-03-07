@@ -63,8 +63,17 @@ export class GameScene extends Phaser.Scene {
       this.load.image(`char_walk${i}`, `/assets/character/character_${gender}_walk${i}.png`);
     }
 
-    for (const car of ["sedan", "sedan_blue", "taxi", "suv", "sports_red", "sports_green", "rounded_yellow", "van"]) {
-      this.load.image(`car_${car}`, `/assets/cars/${car}.png`);
+    const allVehicles = [
+      "ambulance","buggy","bus","bus_school","convertible","firetruck","formula",
+      "hotdog","kart","police","riot","rounded_green","rounded_red","rounded_yellow",
+      "scooter","sedan","sedan_blue","sedan_vintage","sports_convertible","sports_green",
+      "sports_race","sports_red","sports_yellow","station","suv","suv_closed","suv_green",
+      "suv_large","suv_military","suv_travel","taxi","towtruck","tractor","transport",
+      "truck","truck_trailer","truckcabin","truckcabin_vintage","truckdark","truckdelivery",
+      "van","van_flat","van_large","van_small","vendor","vintage",
+    ];
+    for (const v of allVehicles) {
+      this.load.image(`car_${v}`, `/assets/cars/${v}.png`);
     }
 
     const buildingKeys = [
@@ -256,16 +265,19 @@ export class GameScene extends Phaser.Scene {
   }
 
   private makeCars() {
-    const carDefs = [
-      { x: 600,  key: "car_sedan",          speed: 120 },
-      { x: 1100, key: "car_taxi",           speed: 90  },
-      { x: 1600, key: "car_suv",            speed: 150 },
-      { x: 2100, key: "car_sports_red",     speed: 200 },
-      { x: 2600, key: "car_sedan_blue",     speed: 110 },
-      { x: 3000, key: "car_sports_green",   speed: 160 },
-      { x: 3300, key: "car_rounded_yellow", speed: 95  },
-      { x: 3700, key: "car_van",            speed: 80  },
+    const vehicles = [
+      "ambulance","bus","bus_school","firetruck","police","sedan","sedan_blue",
+      "sedan_vintage","sports_red","sports_green","sports_yellow","sports_convertible",
+      "station","suv","suv_large","suv_green","suv_travel","taxi","towtruck",
+      "transport","truck","truckcabin","truckdelivery","van","van_large","vintage",
+      "rounded_red","rounded_green","rounded_yellow","kart","hotdog","convertible",
     ];
+    const spacing = Math.floor(LEVEL_WIDTH / vehicles.length);
+    const carDefs = vehicles.map((v, i) => ({
+      x: 400 + i * spacing,
+      key: `car_${v}`,
+      speed: Phaser.Math.Between(70, 190),
+    }));
 
     carDefs.forEach(({ x, key, speed }) => {
       const dir = -1; // all cars come toward the player
