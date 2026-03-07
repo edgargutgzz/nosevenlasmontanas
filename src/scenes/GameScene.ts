@@ -63,6 +63,10 @@ export class GameScene extends Phaser.Scene {
       this.load.image(`char_walk${i}`, `/assets/character/character_${gender}_walk${i}.png`);
     }
 
+    for (const car of ["sedan", "sedan-sports", "suv", "taxi", "hatchback-sports", "van"]) {
+      this.load.image(`car_${car}`, `/assets/cars/${car}.png`);
+    }
+
     const buildingKeys = [
       "houseBeige", "houseBeigeAlt", "houseBeigeAlt2",
       "houseBeigeTopLeft", "houseBeigeTopMid", "houseBeigeTopRight",
@@ -244,77 +248,44 @@ export class GameScene extends Phaser.Scene {
   }
 
   private makeCars() {
-    const carPositions = [380, 780, 1300, 1900, 2450, 3000];
-    const carColors = ["#c0392b", "#2980b9", "#27ae60", "#8e44ad", "#e67e22", "#2c3e50"];
+    const carDefs = [
+      { x: 380,  key: "car_sedan" },
+      { x: 780,  key: "car_taxi" },
+      { x: 1300, key: "car_suv" },
+      { x: 1900, key: "car_sedan-sports" },
+      { x: 2450, key: "car_hatchback-sports" },
+      { x: 3000, key: "car_van" },
+    ];
 
-    carPositions.forEach((x, i) => {
-      const color = carColors[i % carColors.length];
-      const key = `car_${i}`;
+    carDefs.forEach(({ x, key }, i) => {
+      const car = this.add.image(x, GROUND_TOP - 8, key)
+        .setOrigin(0.5, 1)
+        .setScale(1.6)
+        .setDepth(1);
 
-      const c = document.createElement("canvas");
-      c.width = 130;
-      c.height = 58;
-      const ctx = c.getContext("2d")!;
-
-      // Body
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(0, 18, 130, 28, 4);
-      ctx.fill();
-
-      // Roof
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(22, 4, 76, 20, 6);
-      ctx.fill();
-
-      // Windows
-      ctx.fillStyle = "rgba(180,220,255,0.8)";
-      ctx.fillRect(26, 7, 28, 14);
-      ctx.fillRect(60, 7, 28, 14);
-
-      // Wheels
-      ctx.fillStyle = "#222";
-      [22, 102].forEach(wx => {
-        ctx.beginPath(); ctx.arc(wx, 46, 12, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#888";
-        ctx.beginPath(); ctx.arc(wx, 46, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#222";
-      });
-
-      // Exhaust pipe
-      ctx.fillStyle = "#555";
-      ctx.fillRect(0, 36, 8, 5);
-
-      this.textures.addCanvas(key, c);
-      const car = this.add.image(x, GROUND_TOP - 28, key).setOrigin(0, 1).setDepth(1);
-
-      // Exhaust particles from the back of the car
-      const exhaustX = x - 4;
-      const exhaustY = GROUND_TOP - 34;
-      this.add.particles(exhaustX, exhaustY, "smog2", {
-        speed: { min: 5, max: 20 },
+      // Exhaust particles
+      this.add.particles(x - 38, GROUND_TOP - 22, "smog2", {
+        speed: { min: 5, max: 25 },
         angle: { min: 160, max: 200 },
-        scale: { start: 0.4, end: 0.05 },
+        scale: { start: 0.5, end: 0.05 },
         alpha: { start: 0.9, end: 0 },
-        lifespan: 2000,
-        frequency: 400,
-        gravityY: -30,
+        lifespan: 1800,
+        frequency: 350,
+        gravityY: -40,
       }).setDepth(1);
 
       // Label on first two cars only
       if (i < 2) {
-        this.add.text(car.x + 65, GROUND_TOP - 90, "fuente de\ncontaminación", {
+        this.add.text(car.x, GROUND_TOP - 120, "fuente de\ncontaminación", {
           fontSize: "13px",
           fontFamily: "monospace",
           color: "#cc3300",
           align: "center",
         }).setOrigin(0.5).setDepth(2);
 
-        // Arrow pointing down to car
         const arrow = this.add.graphics().setDepth(2);
         arrow.fillStyle(0xcc3300);
-        arrow.fillTriangle(car.x + 65, GROUND_TOP - 68, car.x + 58, GROUND_TOP - 80, car.x + 72, GROUND_TOP - 80);
+        arrow.fillTriangle(car.x, GROUND_TOP - 98, car.x - 8, GROUND_TOP - 110, car.x + 8, GROUND_TOP - 110);
       }
     });
   }
