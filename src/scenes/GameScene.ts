@@ -41,7 +41,6 @@ const BUILDINGS: BuildingDef[] = [
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
-  private contaminants!: Phaser.Physics.Arcade.Group;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private pad: Phaser.Input.Gamepad.Gamepad | null = null;
   private invincible = false;
@@ -144,15 +143,7 @@ export class GameScene extends Phaser.Scene {
 
     this.physics.add.collider(this.player, this.platforms);
 
-    // Contaminants
-    this.makeCircleTexture("smog1", 22, 0x7a9e3c, 1);
     this.makeCircleTexture("smog2", 16, 0x556b2f, 1);
-    this.makeCircleTexture("smog3", 28, 0x8fbc45, 1);
-
-    this.contaminants = this.physics.add.group();
-    this.spawnContaminants();
-
-    this.physics.add.overlap(this.player, this.contaminants, this.onHit, undefined, this);
 
     // Cars
     this.makeCars();
@@ -353,23 +344,6 @@ export class GameScene extends Phaser.Scene {
     g.fillCircle(radius, radius, radius);
     g.generateTexture(key, size, size);
     g.destroy();
-  }
-
-  private spawnContaminants() {
-    const keys = ["smog1", "smog2", "smog3"];
-    const count = 18;
-    for (let i = 0; i < count; i++) {
-      const key = keys[i % keys.length];
-      const x = Phaser.Math.Between(200, LEVEL_WIDTH - 200);
-      const y = Phaser.Math.Between(GROUND_TOP - 300, GROUND_TOP - 40);
-      const p = this.contaminants.create(x, y, key) as Phaser.Physics.Arcade.Image;
-      p.setDepth(2);
-      const body = p.body as Phaser.Physics.Arcade.Body;
-      body.setAllowGravity(false);
-      body.setBounce(1, 1);
-      p.setVelocity(Phaser.Math.Between(-40, 40), Phaser.Math.Between(-20, 20));
-      p.setCollideWorldBounds(true);
-    }
   }
 
   private onHit() {
