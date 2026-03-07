@@ -17,7 +17,7 @@ interface BuildingDef {
   chimney?: boolean;
 }
 
-const BUILDINGS: BuildingDef[] = [
+const BUILDINGS_TEMPLATE: BuildingDef[] = [
   { x: 0,    tilesWide: 3, bodyRows: 3, style: "Gray",  roof: "Grey" },
   { x: 210,  tilesWide: 2, bodyRows: 5, style: "Dark",  roof: "Red",  chimney: true },
   { x: 360,  tilesWide: 4, bodyRows: 2, style: "Beige", roof: "Grey", awning: "Green" },
@@ -37,6 +37,13 @@ const BUILDINGS: BuildingDef[] = [
   { x: 3240, tilesWide: 2, bodyRows: 6, style: "Beige", roof: "Grey", chimney: true },
   { x: 3450, tilesWide: 3, bodyRows: 3, style: "Dark",  roof: "Red",  awning: "Red" },
 ];
+
+// Tile buildings across the full level width
+const SECTION = 3840;
+const BUILDINGS: BuildingDef[] = Array.from(
+  { length: Math.ceil(7680 / SECTION) },
+  (_, repeat) => BUILDINGS_TEMPLATE.map(b => ({ ...b, x: b.x + repeat * SECTION }))
+).flat();
 
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
