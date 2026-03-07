@@ -1,11 +1,14 @@
 import Phaser from "phaser";
+import { StartScene } from "./scenes/StartScene";
 import { GameScene } from "./scenes/GameScene";
+import { LevelCompleteScene } from "./scenes/LevelCompleteScene";
+import { GameOverScene } from "./scenes/GameOverScene";
 
 new Phaser.Game({
   type: Phaser.AUTO,
   width: 1280,
   height: 720,
-  backgroundColor: "#1a1a2e",
+  backgroundColor: "#c8d8e0",
   input: {
     gamepad: true,
   },
@@ -16,7 +19,7 @@ new Phaser.Game({
       debug: false,
     },
   },
-  scene: [GameScene],
+  scene: [StartScene, GameScene, LevelCompleteScene, GameOverScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
