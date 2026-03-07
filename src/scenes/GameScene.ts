@@ -96,8 +96,7 @@ export class GameScene extends Phaser.Scene {
       "roofRedTopLeft", "roofRedTopMid", "roofRedTopRight",
       "roofGreyLeft", "roofGreyMid", "roofGreyRight",
       "roofGreyTopLeft", "roofGreyTopMid", "roofGreyTopRight",
-      "chimney", "chimneyThin",
-      "window", "windowOpen",
+      "chimneyThin",
       "awningGreen", "awningRed",
     ];
     for (const key of buildingKeys) {
@@ -395,9 +394,6 @@ export class GameScene extends Phaser.Scene {
     const barH = 18;
 
     this.healthBar.clear();
-
-    // Label
-    // (drawn via text object created once in create — handled separately)
 
     // Background
     this.healthBar.fillStyle(0x333333);
