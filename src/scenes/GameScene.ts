@@ -48,7 +48,7 @@ export class GameScene extends Phaser.Scene {
   private goalX = 0;
   private health = 5;
   private healthBar!: Phaser.GameObjects.Graphics;
-  private carEmitters: { car: Phaser.GameObjects.Image; emitter: Phaser.GameObjects.Particles.ParticleEmitter; dir: number; speed: number }[] = [];
+  private carEmitters: { car: Phaser.GameObjects.Image; emitter: Phaser.GameObjects.Particles.ParticleEmitter; dir: number; speed: number; damage: number }[] = [];
 
   constructor() {
     super("GameScene");
@@ -163,7 +163,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
     // Health bar (fixed to camera)
-    this.health = 5;
+    this.health = 10;
     this.add.text(20, 6, "AIR", {
       fontSize: "12px", fontFamily: "monospace", color: "#ffffff",
     }).setScrollFactor(0).setDepth(10);
@@ -221,9 +221,10 @@ export class GameScene extends Phaser.Scene {
 
       entry.emitter.setPosition(entry.car.x + 48, GROUND_TOP - 30);
 
-      // Simple player overlap check
-      if (!this.invincible && Math.abs(entry.car.x - this.player.x) < 50 && this.player.y > GROUND_TOP - 80) {
-        this.onHit();
+      // Hit detection scaled to vehicle size
+      const hitRange = entry.damage === 3 ? 70 : entry.damage === 2 ? 55 : 40;
+      if (!this.invincible && Math.abs(entry.car.x - this.player.x) < hitRange && this.player.y > GROUND_TOP - 80) {
+        this.onHit(entry.damage);
       }
     }
 
@@ -265,28 +266,39 @@ export class GameScene extends Phaser.Scene {
   }
 
   private makeCars() {
-    const vehicles = [
-      "bus", "sedan", "taxi", "truck", "suv", "van",
-      "firetruck", "sports_red", "sedan_vintage", "truckcabin",
-      "ambulance", "bus_school", "suv_large", "vintage", "transport",
+    // damage: 1 = small, 2 = medium, 3 = large
+    const vehicles: { key: string; speed: number; damage: number; scale: number }[] = [
+      { key: "sedan",         speed: 130, damage: 1, scale: 3.5 },
+      { key: "taxi",          speed: 110, damage: 1, scale: 3.5 },
+      { key: "sports_red",    speed: 160, damage: 1, scale: 3.5 },
+      { key: "vintage",       speed: 90,  damage: 1, scale: 3.5 },
+      { key: "suv",           speed: 120, damage: 2, scale: 4   },
+      { key: "van",           speed: 100, damage: 2, scale: 4   },
+      { key: "ambulance",     speed: 140, damage: 2, scale: 4   },
+      { key: "firetruck",     speed: 95,  damage: 2, scale: 4   },
+      { key: "bus_school",    speed: 85,  damage: 3, scale: 5   },
+      { key: "bus",           speed: 80,  damage: 3, scale: 5   },
+      { key: "truck",         speed: 90,  damage: 3, scale: 5   },
+      { key: "transport",     speed: 75,  damage: 3, scale: 5   },
+      { key: "truckcabin",    speed: 85,  damage: 3, scale: 5   },
+      { key: "suv_large",     speed: 110, damage: 2, scale: 4.5 },
     ];
-    // Spread across 3x the level width so only ~3 visible at once
     const spacing = Math.floor((LEVEL_WIDTH * 3) / vehicles.length);
     const carDefs = vehicles.map((v, i) => ({
       x: 600 + i * spacing,
-      key: `car_${v}`,
-      speed: Phaser.Math.Between(80, 160),
+      ...v,
+      key: `car_${v.key}`,
     }));
 
-    carDefs.forEach(({ x, key, speed }) => {
-      const dir = -1; // all cars come toward the player
+    carDefs.forEach(({ x, key, speed, damage, scale }) => {
+      const dir = -1;
       const car = this.add.image(x, GROUND_TOP - 4, key)
         .setOrigin(0.5, 1)
-        .setScale(4)
+        .setScale(scale)
         .setDepth(1)
         .setFlipX(true);
 
-      const emitter = this.add.particles(x + 48, GROUND_TOP - 30, "smog2", {
+      const emitter = this.add.particles(x + scale * 8, GROUND_TOP - 30, "smog2", {
         speed: { min: 5, max: 25 },
         angle: { min: -20, max: 20 },
         scale: { start: 0.5, end: 0.05 },
@@ -296,7 +308,7 @@ export class GameScene extends Phaser.Scene {
         gravityY: -40,
       }).setDepth(1);
 
-      this.carEmitters.push({ car, emitter, dir, speed });
+      this.carEmitters.push({ car, emitter, dir, speed, damage });
     });
   }
 
@@ -348,10 +360,10 @@ export class GameScene extends Phaser.Scene {
     g.destroy();
   }
 
-  private onHit() {
+  private onHit(damage = 1) {
     if (this.invincible || this.levelComplete) return;
     this.invincible = true;
-    this.health = Math.max(0, this.health - 1);
+    this.health = Math.max(0, this.health - damage);
     this.drawHealthBar();
     this.player.setTint(0xff4444);
     this.cameras.main.shake(200, 0.005);
@@ -376,7 +388,6 @@ export class GameScene extends Phaser.Scene {
     const barY = 20;
     const barW = 200;
     const barH = 18;
-    const maxHealth = 5;
 
     this.healthBar.clear();
 
@@ -388,7 +399,7 @@ export class GameScene extends Phaser.Scene {
     this.healthBar.fillRect(barX, barY, barW, barH);
 
     // Fill color based on health
-    const ratio = this.health / maxHealth;
+    const ratio = this.health / 10;
     const color = ratio > 0.5 ? 0x44cc44 : ratio > 0.25 ? 0xffaa00 : 0xff3333;
     this.healthBar.fillStyle(color);
     this.healthBar.fillRect(barX, barY, Math.floor(barW * ratio), barH);
