@@ -71,8 +71,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     const allVehicles = [
-      "sedan","sedan-sports","taxi","suv","suv-luxury","police","hatchback-sports",
-      "van","truck","truck-flat","delivery","delivery-flat","garbage-truck","firetruck","race",
+      "sedan","sedan-blue","taxi","police","sports-red","sports-green","convertible",
+      "suv","suv-closed","van","van-large",
+      "truck","bus","firetruck",
     ];
     for (const v of allVehicles) {
       this.load.image(`car_${v}`, `/assets/cars/${v}.png`);
@@ -270,23 +271,22 @@ export class GameScene extends Phaser.Scene {
   private makeCars() {
     const vehicles: { key: string; speed: number; damage: number; scale: number }[] = [
       // Small (1 damage)
-      { key: "sedan",          speed: 130, damage: 1, scale: 1.6 },
-      { key: "sedan-sports",   speed: 160, damage: 1, scale: 1.6 },
-      { key: "taxi",           speed: 110, damage: 1, scale: 1.6 },
-      { key: "police",         speed: 170, damage: 1, scale: 1.6 },
-      { key: "hatchback-sports", speed: 150, damage: 1, scale: 1.6 },
-      { key: "race",           speed: 190, damage: 1, scale: 1.6 },
+      { key: "sedan",        speed: 130, damage: 1, scale: 3.5 },
+      { key: "sedan-blue",   speed: 145, damage: 1, scale: 3.5 },
+      { key: "taxi",         speed: 110, damage: 1, scale: 3.5 },
+      { key: "police",       speed: 170, damage: 1, scale: 3.5 },
+      { key: "sports-red",   speed: 185, damage: 1, scale: 3.5 },
+      { key: "sports-green", speed: 175, damage: 1, scale: 3.5 },
+      { key: "convertible",  speed: 155, damage: 1, scale: 3.5 },
       // Medium (2 damage)
-      { key: "suv",            speed: 120, damage: 2, scale: 1.8 },
-      { key: "suv-luxury",     speed: 115, damage: 2, scale: 1.8 },
-      { key: "van",            speed: 100, damage: 2, scale: 1.8 },
-      { key: "delivery",       speed: 95,  damage: 2, scale: 1.8 },
-      { key: "delivery-flat",  speed: 90,  damage: 2, scale: 1.8 },
+      { key: "suv",          speed: 120, damage: 2, scale: 4.0 },
+      { key: "suv-closed",   speed: 115, damage: 2, scale: 4.0 },
+      { key: "van",          speed: 100, damage: 2, scale: 4.0 },
+      { key: "van-large",    speed: 90,  damage: 2, scale: 4.0 },
       // Large (3 damage)
-      { key: "truck",          speed: 85,  damage: 3, scale: 2.2 },
-      { key: "truck-flat",     speed: 80,  damage: 3, scale: 2.2 },
-      { key: "garbage-truck",  speed: 75,  damage: 3, scale: 2.2 },
-      { key: "firetruck",      speed: 90,  damage: 3, scale: 2.2 },
+      { key: "truck",        speed: 85,  damage: 3, scale: 4.5 },
+      { key: "bus",          speed: 80,  damage: 3, scale: 4.5 },
+      { key: "firetruck",    speed: 95,  damage: 3, scale: 4.5 },
     ];
     const spacing = Math.floor((LEVEL_WIDTH * 2) / vehicles.length);
     const carDefs = vehicles.map((v, i) => ({
