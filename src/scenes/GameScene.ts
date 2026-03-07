@@ -240,7 +240,7 @@ export class GameScene extends Phaser.Scene {
 
   private makeCircleTexture(key: string, radius: number, color: number, alpha: number) {
     const size = radius * 2;
-    const g = this.make.graphics({ add: false });
+    const g = this.make.graphics() as Phaser.GameObjects.Graphics;
     g.fillStyle(color, alpha);
     g.fillCircle(radius, radius, radius);
     g.generateTexture(key, size, size);
@@ -256,10 +256,11 @@ export class GameScene extends Phaser.Scene {
       const y = Phaser.Math.Between(GROUND_TOP - 300, GROUND_TOP - 40);
       const p = this.contaminants.create(x, y, key) as Phaser.Physics.Arcade.Image;
       p.setDepth(2);
-      p.body!.setAllowGravity(false);
+      const body = p.body as Phaser.Physics.Arcade.Body;
+      body.setAllowGravity(false);
+      body.setBounce(1, 1);
       p.setVelocity(Phaser.Math.Between(-40, 40), Phaser.Math.Between(-20, 20));
       p.setCollideWorldBounds(true);
-      (p.body as Phaser.Physics.Arcade.Body).setBounce(1, 1);
     }
   }
 
