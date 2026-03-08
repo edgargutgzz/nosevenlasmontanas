@@ -11,22 +11,22 @@ export class LevelCompleteScene extends Phaser.Scene {
     this.add.rectangle(width / 2, height / 2, width, height, 0xc8d8e0);
     this.add.rectangle(width / 2, height * 0.75, width, height * 0.5, 0xb0b8a8, 0.35);
 
-    this.add.text(width / 2, height * 0.35, "YOU MADE IT", {
+    this.add.text(width / 2, height * 0.35, "¡LLEGASTE!", {
       fontSize: "72px",
-      fontFamily: "monospace",
+      fontFamily: "'Press Start 2P'",
       color: "#2d2d2d",
       fontStyle: "bold",
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, height * 0.52, "but the air followed you.", {
+    this.add.text(width / 2, height * 0.52, "pero el aire te siguió.", {
       fontSize: "24px",
-      fontFamily: "monospace",
+      fontFamily: "'Press Start 2P'",
       color: "#555555",
     }).setOrigin(0.5);
 
-    const prompt = this.add.text(width / 2, height * 0.7, "press any key to play again", {
+    const prompt = this.add.text(width / 2, height * 0.7, "presiona cualquier tecla para jugar de nuevo", {
       fontSize: "20px",
-      fontFamily: "monospace",
+      fontFamily: "'Press Start 2P'",
       color: "#2d2d2d",
     }).setOrigin(0.5);
 

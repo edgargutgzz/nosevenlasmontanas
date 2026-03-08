@@ -19,11 +19,6 @@ export class StartScene extends Phaser.Scene {
     const scaleY = H / bg.height;
     bg.setScale(Math.max(scaleX, scaleY)).setDepth(0);
 
-    // Overlay uniforme sutil
-    const g = this.add.graphics().setDepth(1);
-    g.fillStyle(0x000000, 0.25);
-    g.fillRect(0, 0, W, H);
-
     // ── Título ─────────────────────────────────────────────────────
     this.add.text(W / 2, H * 0.22, "JUEGO DEL AIRE", {
       fontSize: "52px",

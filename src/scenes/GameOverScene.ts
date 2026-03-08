@@ -10,22 +10,22 @@ export class GameOverScene extends Phaser.Scene {
 
     this.add.rectangle(width / 2, height / 2, width, height, 0x111111);
 
-    this.add.text(width / 2, height * 0.35, "YOU RAN OUT OF AIR", {
+    this.add.text(width / 2, height * 0.35, "SE TE ACABÓ EL AIRE", {
       fontSize: "60px",
-      fontFamily: "monospace",
+      fontFamily: "'Press Start 2P'",
       color: "#ff4444",
       fontStyle: "bold",
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, height * 0.52, "the pollution got to you.", {
+    this.add.text(width / 2, height * 0.52, "la contaminación te alcanzó.", {
       fontSize: "22px",
-      fontFamily: "monospace",
+      fontFamily: "'Press Start 2P'",
       color: "#aaaaaa",
     }).setOrigin(0.5);
 
-    const prompt = this.add.text(width / 2, height * 0.7, "press any key to try again", {
+    const prompt = this.add.text(width / 2, height * 0.7, "presiona cualquier tecla para intentar de nuevo", {
       fontSize: "20px",
-      fontFamily: "monospace",
+      fontFamily: "'Press Start 2P'",
       color: "#ffffff",
     }).setOrigin(0.5);
 
@@ -38,7 +38,7 @@ export class GameOverScene extends Phaser.Scene {
   private restart() {
     this.cameras.main.fadeOut(400, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
-      this.scene.start("GameScene");
+      this.scene.start("StartScene");
     });
   }
 }
