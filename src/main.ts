@@ -9,9 +9,6 @@ const startGame = () => new Phaser.Game({
   width: 1280,
   height: 720,
   backgroundColor: "#64b4e6",
-  render: {
-    resolution: window.devicePixelRatio ?? 1,
-  },
   input: {
     gamepad: true,
   },

@@ -64,22 +64,7 @@ export class StartScene extends Phaser.Scene {
       frameRate: 12, repeat: -1,
     });
 
-    const drawHelmet = (g: Phaser.GameObjects.Graphics) => {
-      // Casco astronauta — visor redondo
-      const hx = 2, hy = -36;
-      g.lineStyle(3, 0xaaaaaa, 1);
-      g.fillStyle(0x88ccff, 0.35);
-      g.strokeCircle(hx, hy, 15);
-      g.fillCircle(hx, hy, 15);
-      // Borde metálico exterior
-      g.lineStyle(4, 0xcccccc, 0.9);
-      g.strokeCircle(hx, hy, 17);
-      // Reflejo
-      g.fillStyle(0xffffff, 0.4);
-      g.fillEllipse(hx - 4, hy - 6, 6, 4);
-    };
-
-    const drawMask = (g: Phaser.GameObjects.Graphics) => {
+const drawMask = (g: Phaser.GameObjects.Graphics) => {
       const mx = 0, my = -24;
       // Cuerpo del cubrebocas (forma trapezoidal)
       g.fillStyle(0xffffff, 0.95);
