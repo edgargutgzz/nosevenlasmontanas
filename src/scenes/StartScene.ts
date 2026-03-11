@@ -31,14 +31,14 @@ export class StartScene extends Phaser.Scene {
 
     // ── Título ────────────────────────────────────────────────────
     this.add.text(W / 2, H * 0.28, "NO SE VEN LAS\nMONTAÑAS", {
-      fontSize: "44px", fontFamily: "'Press Start 2P'",
+      fontSize: "28px", fontFamily: "'Press Start 2P'",
       color: "#ffffff", stroke: "#000000", strokeThickness: 5,
       align: "center", lineSpacing: 12,
     }).setOrigin(0.5).setDepth(5);
 
     // ── Subtítulo ─────────────────────────────────────────────────
-    this.add.text(W / 2, H * 0.48, "¿Puedes escapar de la contaminación?", {
-      fontSize: "16px", fontFamily: "'Press Start 2P'",
+    this.add.text(W / 2, H * 0.48, "Corre. Respira. Sobrevive.", {
+      fontSize: "11px", fontFamily: "'Press Start 2P'",
       color: "#e8720c", stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5);
 
