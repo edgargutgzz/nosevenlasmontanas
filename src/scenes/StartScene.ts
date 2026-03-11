@@ -41,7 +41,7 @@ export class StartScene extends Phaser.Scene {
     this.add.text(W / 2, H * 0.40, "Corre. Respira.\nSobrevive.", {
       fontSize: "14px", fontFamily: "'Press Start 2P'",
       color: "#e8720c", stroke: "#000000", strokeThickness: 3,
-      align: "center",
+      align: "center", lineSpacing: 10,
     }).setOrigin(0.5).setDepth(5);
 
     // ── Prompt parpadeante ────────────────────────────────────────
