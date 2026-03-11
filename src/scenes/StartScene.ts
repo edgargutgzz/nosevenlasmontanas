@@ -21,7 +21,7 @@ export class StartScene extends Phaser.Scene {
     const H = this.scale.height;
 
     // ── Fondo ─────────────────────────────────────────────────────
-    const bg = this.add.image(W / 2, H / 2, "bg_start").setDepth(0);
+    const bg = this.add.image(W / 2 - 900, H / 2, "bg_start").setDepth(0);
     bg.setScale(Math.max(W / bg.width, H / bg.height));
 
     // ── Overlay ───────────────────────────────────────────────────
@@ -39,7 +39,7 @@ export class StartScene extends Phaser.Scene {
 
     // ── Subtítulo ─────────────────────────────────────────────────
     this.add.text(W / 2, H * 0.40, "Corre. Respira. Sobrevive.", {
-      fontSize: "11px", fontFamily: "'Press Start 2P'",
+      fontSize: "14px", fontFamily: "'Press Start 2P'",
       color: "#e8720c", stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5);
 
