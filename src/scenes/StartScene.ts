@@ -30,7 +30,7 @@ export class StartScene extends Phaser.Scene {
     overlay.fillRect(0, 0, W, H);
 
     // ── Título ────────────────────────────────────────────────────
-    this.add.text(W / 2, H * 0.28, "NO SE VEN LAS\nMONTAÑAS", {
+    this.add.text(W / 2, H * 0.28, "NO SE VEN\nLAS MONTAÑAS", {
       fontSize: "26px", fontFamily: "'Press Start 2P'",
       color: "#ffffff", stroke: "#000000", strokeThickness: 5,
       align: "center", lineSpacing: 12,
