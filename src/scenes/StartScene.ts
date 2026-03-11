@@ -34,11 +34,11 @@ export class StartScene extends Phaser.Scene {
       fontSize: "28px", fontFamily: "'Press Start 2P'",
       color: "#ffffff", stroke: "#000000", strokeThickness: 5,
       align: "center", lineSpacing: 12,
-      padding: { left: 24, right: 24 },
+      padding: { left: 48, right: 48 },
     }).setOrigin(0.5).setDepth(5);
 
     // ── Subtítulo ─────────────────────────────────────────────────
-    this.add.text(W / 2, H * 0.48, "Corre. Respira. Sobrevive.", {
+    this.add.text(W / 2, H * 0.40, "Corre. Respira. Sobrevive.", {
       fontSize: "11px", fontFamily: "'Press Start 2P'",
       color: "#e8720c", stroke: "#000000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(5);
