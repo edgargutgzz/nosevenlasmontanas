@@ -31,7 +31,7 @@ export class StartScene extends Phaser.Scene {
 
     // ── Título ────────────────────────────────────────────────────
     this.add.text(W / 2, H * 0.28, "NO SE VEN LAS\nMONTAÑAS", {
-      fontSize: "22px", fontFamily: "'Press Start 2P'",
+      fontSize: "26px", fontFamily: "'Press Start 2P'",
       color: "#ffffff", stroke: "#000000", strokeThickness: 5,
       align: "center", lineSpacing: 12,
       wordWrap: { width: W - 48 },
