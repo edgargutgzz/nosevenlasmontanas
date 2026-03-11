@@ -100,7 +100,7 @@ const drawMask = (g: Phaser.GameObjects.Graphics) => {
       drawAccessory: (g: Phaser.GameObjects.Graphics) => void
     ) => {
       const gender = animKey.split("_")[1];
-      const charY = H - 140;
+      const charY = H - 160;
 
       const container = this.add.container(-60, charY).setDepth(depth);
       const sprite = this.add.sprite(0, 0, `${gender}_walk0`).setScale(0.75).setOrigin(0.5, 1);
