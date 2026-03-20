@@ -1,23 +1,28 @@
 import Phaser from "phaser";
 
-const SIDEWALK_Y = 630;   // superficie de la banqueta (jugador camina aquí)
-const ROAD_Y     = 690;   // superficie de la calle (carros van aquí)
-const LEVEL_WIDTH = 7680;
+const SIDEWALK_Y  = 560;  // superficie donde camina el jugador
+const ROAD_Y      = 660;  // superficie de la calle
+const LEVEL_WIDTH = 6400;
 
+// Alturas de proyectiles relativas a la banqueta
+const PROJ_LOW  = SIDEWALK_Y - 28;   // al ras del suelo → hay que saltar
+const PROJ_MID  = SIDEWALK_Y - 90;   // al pecho → saltar o esquivar
+const PROJ_HIGH = SIDEWALK_Y - 155;  // a la cabeza → quedarse en el suelo
 
 export class GameScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private platforms!: Phaser.Physics.Arcade.StaticGroup;
+  private projectiles!: Phaser.Physics.Arcade.Group;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private pad: Phaser.Input.Gamepad.Gamepad | null = null;
-  private invincible = false;
-  private pollutionAccum = 0;
+  private invincible  = false;
+  private isCrouching = false;
   private levelComplete = false;
   private goalX = 0;
-  private health = 5;
+  private health = 10;
   private healthBar!: Phaser.GameObjects.Graphics;
   private difficultyMultiplier = 1;
-  private carEmitters: { car: Phaser.GameObjects.Image; emitter: Phaser.GameObjects.Particles.ParticleEmitter; dir: number; speed: number; damage: number; scale: number }[] = [];
+  private spawnTimer!: Phaser.Time.TimerEvent;
 
   constructor() {
     super("GameScene");
@@ -28,6 +33,7 @@ export class GameScene extends Phaser.Scene {
     this.load.image("char_idle", `/assets/character/character_${character}_idle.png`);
     this.load.image("char_jump", `/assets/character/character_${character}_jump.png`);
     this.load.image("char_fall", `/assets/character/character_${character}_fall.png`);
+    this.load.image("char_duck", `/assets/character/character_${character}_duck.png`);
     for (let i = 0; i < 8; i++) {
       this.load.image(`char_walk${i}`, `/assets/character/character_${character}_walk${i}.png`);
     }
@@ -40,85 +46,35 @@ export class GameScene extends Phaser.Scene {
     for (const v of allVehicles) {
       this.load.image(`car_${v}`, `/assets/cars/${v}.png`);
     }
-
-    for (let i = 0; i <= 8; i += 2) {
-      const n = String(i).padStart(2, "0");
-      this.load.image(`whitePuff${n}`, `/assets/smoke/whitePuff${n}.png`);
-      if (i <= 6) this.load.image(`blackSmoke${n}`, `/assets/smoke/blackSmoke${n}.png`);
-    }
   }
 
   create() {
     this.levelComplete = false;
-    this.invincible = false;
-    this.pollutionAccum = 0;
-    this.carEmitters = [];
+    this.invincible    = false;
+    this.isCrouching   = false;
+    this.health        = 10;
     this.difficultyMultiplier = this.registry.get("difficulty") === "hard" ? 2 : 1;
 
-    // World bounds
-    this.physics.world.setBounds(0, 0, LEVEL_WIDTH, 720);
+    // Mundo extendido hacia arriba para el drop-in
+    this.physics.world.setBounds(0, -800, LEVEL_WIDTH, 1520);
 
-    // ── Calle (asfalto) ─────────────────────────────────────────────
-    this.add.rectangle(LEVEL_WIDTH / 2, (ROAD_Y + 720) / 2, LEVEL_WIDTH, 720 - ROAD_Y + 60, 0x2e2e2e).setDepth(-0.5);
+    this.buildWorld();
 
-    // Marcas viales
-    const roadG = this.add.graphics().setDepth(0);
-    const dashLen = 48, dashGap = 64;
-    const laneY = ROAD_Y + 12;
-    roadG.fillStyle(0xffffff, 0.6);
-    for (let x = 0; x < LEVEL_WIDTH; x += dashLen + dashGap) roadG.fillRect(x, laneY, dashLen, 4);
+    // ── Proyectiles ────────────────────────────────────────────────
+    this.projectiles = this.physics.add.group();
 
-    // ── Banqueta (plataforma del jugador) ───────────────────────────
-    // Base: concreto beige-gris cálido
-    this.add.rectangle(LEVEL_WIDTH / 2, SIDEWALK_Y + 20, LEVEL_WIDTH, 40, 0xc4bba8).setDepth(0.5);
+    // ── Meta ───────────────────────────────────────────────────────
+    this.goalX = LEVEL_WIDTH - 160;
+    this.createGoal(this.goalX);
 
-    // Franja clara en el tope (luz ambiente)
-    this.add.rectangle(LEVEL_WIDTH / 2, SIDEWALK_Y + 1, LEVEL_WIDTH, 3, 0xd8d0bc).setDepth(0.6);
-
-    // Franja oscura en la parte baja (sombra interna)
-    this.add.rectangle(LEVEL_WIDTH / 2, SIDEWALK_Y + 34, LEVEL_WIDTH, 6, 0xb0a898).setDepth(0.6);
-
-    // Juntas de losetas (líneas verticales cada 88px)
-    const sidewalkG = this.add.graphics().setDepth(0.7);
-    sidewalkG.lineStyle(1, 0xa09888, 0.6);
-    for (let x = 44; x < LEVEL_WIDTH; x += 88) {
-      sidewalkG.beginPath();
-      sidewalkG.moveTo(x, SIDEWALK_Y + 4);
-      sidewalkG.lineTo(x, SIDEWALK_Y + 34);
-      sidewalkG.strokePath();
-    }
-
-    // Curb (bordillo): borde grueso oscuro al fondo de la banqueta
-    this.add.rectangle(LEVEL_WIDTH / 2, SIDEWALK_Y + 41, LEVEL_WIDTH, 6, 0x7a7060).setDepth(0.8);
-    // Línea de sombra del curb
-    this.add.rectangle(LEVEL_WIDTH / 2, SIDEWALK_Y + 46, LEVEL_WIDTH, 3, 0x5a5048).setDepth(0.8);
-
-    // Física: plataforma invisible en la banqueta
-    const canvas = document.createElement("canvas");
-    canvas.width = 64; canvas.height = 40;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#aaaaaa";
-    ctx.fillRect(0, 0, 64, 40);
-    this.textures.addCanvas("sidewalk", canvas);
-
-    this.platforms = this.physics.add.staticGroup();
-    for (let x = 0; x < LEVEL_WIDTH; x += 64) {
-      this.platforms.create(x + 32, SIDEWALK_Y + 28, "sidewalk").setAlpha(0);
-    }
-
-    // Goal zone
-    this.createGoal(LEVEL_WIDTH - 120);
-
-    // Player — empieza sobre la banqueta
-    this.player = this.physics.add.sprite(100, SIDEWALK_Y - 60, "char_idle");
+    // ── Player — empieza arriba y cae ─────────────────────────────
+    this.player = this.physics.add.sprite(120, -600, "char_idle");
     this.player.setCollideWorldBounds(true);
-    this.player.setScale(0.5);
-    this.player.setDepth(3);
-    // Trim physics body to exclude transparent bottom padding in sprite (~20px in 128px source = 10px at scale 0.5)
-    // so the visual feet land exactly on the sidewalk surface
+    this.player.setScale(0.85);
+    this.player.setDepth(5);
     const body = this.player.body as Phaser.Physics.Arcade.Body;
-    body.setSize(this.player.width, this.player.height - 20);
-    body.setOffset(0, 0);
+    body.setSize(64, 88, false);
+    body.setOffset(16, 20);
 
     this.anims.create({
       key: "walk",
@@ -129,24 +85,42 @@ export class GameScene extends Phaser.Scene {
 
     this.physics.add.collider(this.player, this.platforms);
 
-    // Cars
-    this.makeCars();
-    this.showIntroMessage();
+    // Colisión jugador ↔ proyectiles
+    this.physics.add.overlap(this.player, this.projectiles, (_p, proj) => {
+      (proj as Phaser.Physics.Arcade.Image).destroy();
+      this.onHit();
+    });
 
-    // Camera
-    this.cameras.main.setBounds(0, 0, LEVEL_WIDTH, 720);
+    // ── Spawner de contaminación desde la derecha ──────────────────
+    this.startPollutionSpawner();
+
+    // ── Cámara ─────────────────────────────────────────────────────
+    this.cameras.main.setBounds(0, -800, LEVEL_WIDTH, 1520);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
-    // Health bar (fixed to camera)
-    this.health = 10;
-    this.add.text(20, 40, "AIRE", {
-      fontSize: "12px", fontFamily: "'Press Start 2P'", color: "#ffffff",
+    // ── Drop-in intro: jugador invisible hasta aterrizar ───────────
+    this.player.setVisible(false);
+    this.levelComplete = true;
+    const checkLanding = this.time.addEvent({
+      delay: 100,
+      loop: true,
+      callback: () => {
+        if (this.player.body!.blocked.down) {
+          checkLanding.remove();
+          this.player.setVisible(true);
+          this.time.delayedCall(200, () => { this.levelComplete = false; });
+        }
+      },
+    });
+
+    // ── HUD ────────────────────────────────────────────────────────
+    this.add.text(20, 20, "AIRE", {
+      fontSize: "10px", fontFamily: "'Press Start 2P'", color: "#ffffff",
     }).setScrollFactor(0).setDepth(10);
     this.healthBar = this.add.graphics().setScrollFactor(0).setDepth(10);
     this.drawHealthBar();
 
     this.cursors = this.input.keyboard!.createCursorKeys();
-
     this.input.gamepad!.once("connected", (pad: Phaser.Input.Gamepad.Gamepad) => {
       this.pad = pad;
     });
@@ -155,67 +129,55 @@ export class GameScene extends Phaser.Scene {
   update() {
     if (this.levelComplete) return;
 
-    const onGround = this.player.body!.blocked.down;
+    const onGround   = this.player.body!.blocked.down;
     const leftStickX = this.pad?.leftStick.x ?? 0;
-    const buttonA = this.pad?.isButtonDown(0) ?? false;
-    const dpadLeft = this.pad?.left ?? false;
-    const dpadRight = this.pad?.right ?? false;
+    const buttonA    = this.pad?.isButtonDown(0) ?? false;
+    const dpadLeft   = this.pad?.left  ?? false;
+    const dpadRight  = this.pad?.right ?? false;
 
-    const goLeft = this.cursors.left.isDown || leftStickX < -0.3 || dpadLeft;
-    const goRight = this.cursors.right.isDown || leftStickX > 0.3 || dpadRight;
-    const jump =
-      Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
-      Phaser.Input.Keyboard.JustDown(this.cursors.space!) ||
-      buttonA;
+    const goLeft  = this.cursors.left.isDown  || leftStickX < -0.3 || dpadLeft;
+    const goRight = this.cursors.right.isDown || leftStickX >  0.3 || dpadRight;
+    const crouch  = this.cursors.down.isDown  || (this.pad?.down ?? false);
+    const jump    = Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
+                    Phaser.Input.Keyboard.JustDown(this.cursors.space!) ||
+                    buttonA;
 
-    if (goLeft) {
-      this.player.setVelocityX(-220);
-      this.player.setFlipX(true);
-    } else if (goRight) {
-      this.player.setVelocityX(220);
-      this.player.setFlipX(false);
-    } else {
-      this.player.setVelocityX(0);
+    // Agacharse
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+    if (crouch && onGround && !this.isCrouching) {
+      this.isCrouching = true;
+      body.setSize(64, 44, false);
+      body.setOffset(16, 64);
+      this.player.anims.stop();
+      this.player.setTexture("char_duck");
+    } else if (!crouch && this.isCrouching) {
+      this.isCrouching = false;
+      body.setSize(64, 88, false);
+      body.setOffset(16, 20);
     }
 
-    if (jump && onGround) {
-      this.player.setVelocityY(-520);
+    if (goLeft)       { this.player.setVelocityX(-220); this.player.setFlipX(true);  }
+    else if (goRight) { this.player.setVelocityX( 220); this.player.setFlipX(false); }
+    else              { this.player.setVelocityX(0); }
+
+    if (jump && onGround && !this.isCrouching) this.player.setVelocityY(-520);
+
+    if (this.player.x >= this.goalX) this.onLevelComplete();
+
+    // Destruir proyectiles fuera de pantalla o por encima del mundo de juego
+    for (const proj of this.projectiles.getChildren()) {
+      const p = proj as Phaser.Physics.Arcade.Image;
+      if (p.x < -100 || p.x > LEVEL_WIDTH + 100 || p.y < -800) p.destroy();
     }
 
-    if (this.player.x >= this.goalX) {
-      this.onLevelComplete();
-    }
-
-    // Move cars and sync exhaust emitters
-    const delta = this.game.loop.delta / 1000;
-    for (const entry of this.carEmitters) {
-      entry.car.x += entry.speed * entry.dir * delta;
-
-      if (entry.dir === 1 && entry.car.x > LEVEL_WIDTH + 100) entry.car.x = -100;
-      if (entry.dir === -1 && entry.car.x < -100) entry.car.x = LEVEL_WIDTH + 100;
-
-      entry.emitter.setPosition(entry.car.x - entry.dir * entry.scale * 20, ROAD_Y - 30);
-
-      // Proximity-based pollution damage: accumulate per frame
-      const proximityRange = entry.damage === 3 ? 320 : entry.damage === 2 ? 240 : 180;
-      const dist = Math.abs(entry.car.x - this.player.x);
-      if (dist < proximityRange) {
-        const intensity = 1 - dist / proximityRange;
-        this.pollutionAccum += intensity * entry.damage * delta * this.difficultyMultiplier;
-      }
-    }
-
-    // Apply accumulated pollution damage once per threshold
-    if (!this.invincible && this.pollutionAccum >= 0.6) {
-      const dmg = Math.floor(this.pollutionAccum);
-      this.pollutionAccum -= dmg;
-      this.onHit(dmg);
-    }
-
+    // Animación
     if (!onGround) {
       const goingUp = (this.player.body!.velocity.y ?? 0) < 0;
       this.player.anims.stop();
       this.player.setTexture(goingUp ? "char_jump" : "char_fall");
+    } else if (this.isCrouching) {
+      this.player.anims.stop();
+      this.player.setTexture("char_duck");
     } else if (goLeft || goRight) {
       if (!this.player.anims.isPlaying) this.player.play("walk");
     } else {
@@ -224,21 +186,237 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // ── Mundo ────────────────────────────────────────────────────────
+
+  private buildWorld() {
+    // Cielo nocturno
+    this.add.rectangle(LEVEL_WIDTH / 2, -400, LEVEL_WIDTH, 2000, 0x07091a).setDepth(-3);
+
+    this.drawCityBackground();
+
+    // Calle (fondo)
+    this.add.rectangle(LEVEL_WIDTH / 2, (ROAD_Y + 720) / 2, LEVEL_WIDTH, 720 - ROAD_Y + 60, 0x2e2e2e).setDepth(0);
+    const roadG = this.add.graphics().setDepth(0.5);
+    roadG.fillStyle(0xffffff, 0.4);
+    for (let x = 0; x < LEVEL_WIDTH; x += 112) roadG.fillRect(x, ROAD_Y + 14, 56, 4);
+
+    // Banqueta
+    this.add.rectangle(LEVEL_WIDTH / 2, SIDEWALK_Y + 40, LEVEL_WIDTH, 80, 0xc4bba8).setDepth(1);
+    this.add.rectangle(LEVEL_WIDTH / 2, SIDEWALK_Y + 2,  LEVEL_WIDTH, 4,  0xd8d0bc).setDepth(1.1);
+    this.add.rectangle(LEVEL_WIDTH / 2, SIDEWALK_Y + 72, LEVEL_WIDTH, 8,  0x7a7060).setDepth(1.1);
+
+    // Losetas
+    const sg = this.add.graphics().setDepth(1.2);
+    sg.lineStyle(1, 0xa09888, 0.5);
+    for (let x = 88; x < LEVEL_WIDTH; x += 88) {
+      sg.beginPath(); sg.moveTo(x, SIDEWALK_Y + 6); sg.lineTo(x, SIDEWALK_Y + 68); sg.strokePath();
+    }
+
+    // Física banqueta
+    const canvas = document.createElement("canvas");
+    canvas.width = 64; canvas.height = 16;
+    canvas.getContext("2d")!.fillRect(0, 0, 64, 16);
+    this.textures.addCanvas("sidewalk", canvas);
+    this.platforms = this.physics.add.staticGroup();
+    for (let x = 0; x < LEVEL_WIDTH; x += 64) {
+      this.platforms.create(x + 32, SIDEWALK_Y + 64, "sidewalk").setAlpha(0);
+    }
+  }
+
+  private drawCityBackground() {
+    // ── Estrellas ──────────────────────────────────────────────────
+    const stars = this.add.graphics().setDepth(-2.9);
+    const starPositions = [
+      [80,  -680], [210, -720], [400, -650], [560, -700], [730, -660],
+      [920, -710], [1100,-680], [1280,-640], [1450,-700], [1600,-720],
+      [1750,-660], [1900,-690], [2050,-710], [2200,-650], [2380,-680],
+      [2500,-720], [2650,-670], [2820,-700], [2980,-650], [3140,-710],
+      [3300,-680], [3460,-720], [3620,-660], [3780,-690], [3940,-650],
+      [4100,-710], [4260,-680], [4420,-720], [4580,-660], [4740,-700],
+      [4900,-650], [5060,-710], [5220,-680], [5380,-720], [5540,-660],
+      [5700,-690], [5860,-650], [6020,-710], [6180,-680], [6340,-720],
+      // Estrellas más pequeñas/tenues
+      [150, -600], [350, -580], [500, -610], [700, -590], [850, -620],
+      [1050,-580], [1200,-600], [1400,-610], [1550,-580], [1700,-600],
+      [1850,-620], [2000,-590], [2150,-610], [2300,-580], [2450,-620],
+    ];
+    for (const [sx, sy] of starPositions) {
+      const size   = ((sx * 7 + sy * 3) % 3) === 0 ? 2.5 : 1.5;
+      const bright = ((sx + sy) % 5) === 0;
+      stars.fillStyle(bright ? 0xffffff : 0xaabbcc, bright ? 0.9 : 0.55);
+      stars.fillCircle(sx, sy, size);
+    }
+
+    // ── Montañas lejanas (estilo Cerro de la Silla) ────────────────
+    // Perfil inspirado en el skyline de Monterrey:
+    // Cerro de la Silla (doble pico / silla), Sierra Madre al fondo
+    const mtnFar = this.add.graphics().setDepth(-2.7);
+    mtnFar.fillStyle(0x0d1a2e, 1);
+    this.drawMountainRange(mtnFar, [
+      // Perfil del Cerro de la Silla — se repite a lo largo del nivel
+      { x: 0,    y: 0    },
+      { x: 180,  y: -260 },  // pico izq de la silla
+      { x: 310,  y: -190 },  // silla (depresión)
+      { x: 460,  y: -310 },  // pico der de la silla (más alto)
+      { x: 620,  y: -140 },
+      { x: 800,  y: -200 },  // otro cerro
+      { x: 960,  y: -80  },
+    ], 960);
+
+    // Montañas más cercanas (un poco más claras)
+    const mtnNear = this.add.graphics().setDepth(-2.5);
+    mtnNear.fillStyle(0x111f35, 1);
+    this.drawMountainRange(mtnNear, [
+      { x: 0,    y: 0    },
+      { x: 120,  y: -160 },
+      { x: 280,  y: -100 },
+      { x: 440,  y: -220 },
+      { x: 560,  y: -150 },
+      { x: 700,  y: -180 },
+      { x: 840,  y: -90  },
+      { x: 960,  y: 0    },
+    ], 960);
+
+    // ── Edificios (noche: colores más oscuros, ventanas iluminadas) ──
+    const pattern: { ox: number; w: number; h: number; c: number }[] = [
+      { ox:   0, w: 180, h: 440, c: 0x0e1e38 },
+      { ox: 190, w:  90, h: 280, c: 0x0e2818 },
+      { ox: 290, w: 220, h: 380, c: 0x0c1a30 },
+      { ox: 520, w: 140, h: 500, c: 0x091424 },
+      { ox: 670, w: 100, h: 220, c: 0x0e2018 },
+      { ox: 780, w: 170, h: 320, c: 0x0c1a2e },
+    ];
+    const tiles = Math.ceil(LEVEL_WIDTH / 960) + 1;
+
+    const g = this.add.graphics().setDepth(-2);
+    for (let t = 0; t < tiles; t++) {
+      for (const b of pattern) {
+        const bx = t * 960 + b.ox;
+        const by = SIDEWALK_Y - b.h;
+
+        g.fillStyle(b.c, 1);
+        g.fillRect(bx, by, b.w, b.h);
+
+        // Highlight lateral izquierdo
+        g.fillStyle(0xffffff, 0.04);
+        g.fillRect(bx, by, 3, b.h);
+
+        // Ventanas — mayoría apagadas, algunas encendidas (noche)
+        for (let wy = by + 20; wy < SIDEWALK_Y - 12; wy += 26) {
+          for (let wx = bx + 10; wx < bx + b.w - 10; wx += 20) {
+            const hash = (wx * 13 + wy * 7) % 100;
+            if (hash < 35) {
+              // Ventana encendida — amarillo/naranja cálido
+              g.fillStyle(hash < 15 ? 0xffdd88 : 0xffaa44, 0.85);
+              g.fillRect(wx, wy, 10, 14);
+            } else if (hash < 50) {
+              // Ventana apagada visible
+              g.fillStyle(0x1a2a44, 0.5);
+              g.fillRect(wx, wy, 10, 14);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private drawMountainRange(
+    g: Phaser.GameObjects.Graphics,
+    profile: { x: number; y: number }[],
+    tileW: number,
+  ) {
+    const baseY = SIDEWALK_Y - 20;
+    const tiles = Math.ceil(LEVEL_WIDTH / tileW) + 1;
+
+    for (let t = 0; t < tiles; t++) {
+      const offsetX = t * tileW;
+      g.beginPath();
+      g.moveTo(offsetX, baseY);
+      for (const p of profile) {
+        g.lineTo(offsetX + p.x, baseY + p.y);
+      }
+      g.lineTo(offsetX + tileW, baseY);
+      g.closePath();
+      g.fillPath();
+    }
+  }
+
+  // Patrones de oleadas: cada entrada es [altura, delay_ms_desde_inicio_de_oleada]
+  private readonly WAVES: [number, number][][] = [
+    [[PROJ_LOW,  0]],
+    [[PROJ_MID,  0]],
+    [[PROJ_HIGH, 0]],
+    [[PROJ_LOW,  0], [PROJ_LOW,  300]],
+    [[PROJ_MID,  0], [PROJ_HIGH, 300]],
+    [[PROJ_LOW,  0], [PROJ_MID,  250], [PROJ_LOW, 500]],
+    [[PROJ_HIGH, 0], [PROJ_LOW,  200]],
+    [[PROJ_MID,  0], [PROJ_MID,  200], [PROJ_MID, 400]],
+  ];
+  private waveIndex = 0;
+
+  private startPollutionSpawner() {
+    this.waveIndex = 0;
+    // Esperar a que el jugador aterrice antes de empezar
+    this.time.delayedCall(2500, () => {
+      this.spawnTimer = this.time.addEvent({
+        delay: 2200,
+        loop: true,
+        callback: () => {
+          if (this.levelComplete) return;
+          const wave = this.WAVES[this.waveIndex % this.WAVES.length];
+          this.waveIndex++;
+          for (const [y, delay] of wave) {
+            this.time.delayedCall(delay, () => {
+              if (this.levelComplete) return;
+              this.fireProjectile(y);
+            });
+          }
+        },
+      });
+    });
+  }
+
+  private fireProjectile(targetY: number) {
+    const spawnX = this.cameras.main.scrollX + 1380;
+
+    // Tamaño y color según altura
+    const isLow  = targetY === PROJ_LOW;
+    const isHigh = targetY === PROJ_HIGH;
+    const radius = isLow ? 18 : isHigh ? 12 : 15;
+    const color  = isLow ? 0xcc3300 : isHigh ? 0x88b840 : 0xc8a040;
+    const speed  = isLow ? -260 : isHigh ? -320 : -290;
+
+    const key = `proj_${Date.now()}_${Math.random()}`;
+    const gfx = this.make.graphics({ x: 0, y: 0, add: false });
+    gfx.fillStyle(Phaser.Display.Color.ValueToColor(color).darken(35).color, 1);
+    gfx.fillCircle(radius, radius, radius);
+    gfx.fillStyle(color, 1);
+    gfx.fillCircle(radius, radius, radius * 0.62);
+    gfx.fillStyle(0xffffff, 0.3);
+    gfx.fillCircle(radius * 0.6, radius * 0.5, radius * 0.25);
+    gfx.generateTexture(key, radius * 2, radius * 2);
+    gfx.destroy();
+
+    const proj = this.projectiles.create(spawnX, targetY, key) as Phaser.Physics.Arcade.Image;
+    proj.setDepth(4);
+    (proj.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
+    proj.setVelocity(speed, 0);
+
+    this.tweens.add({ targets: proj, angle: -360, duration: 900, repeat: -1 });
+
+    proj.on("destroy", () => {
+      if (this.textures.exists(key)) this.textures.remove(key);
+    });
+  }
 
   private createGoal(x: number) {
-    this.goalX = x;
-
-    const goalCenterY = SIDEWALK_Y - 80;
-    const glow = this.add.rectangle(x + 40, goalCenterY, 80, 160, 0x44ff88, 0.35).setDepth(1);
-    this.add.rectangle(x + 40, goalCenterY, 6, 160, 0x22cc66).setDepth(1);
+    const goalCenterY = SIDEWALK_Y - 60;
+    const glow = this.add.rectangle(x + 40, goalCenterY, 80, 120, 0x44ff88, 0.35).setDepth(3);
+    this.add.rectangle(x + 40, goalCenterY, 6, 120, 0x22cc66).setDepth(3);
     this.tweens.add({ targets: glow, alpha: 0.1, duration: 800, yoyo: true, repeat: -1 });
-
-    this.add.text(x + 40, SIDEWALK_Y - 180, "META", {
-      fontSize: "20px",
-      fontFamily: "'Press Start 2P'",
-      color: "#22cc66",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(1);
+    this.add.text(x + 40, SIDEWALK_Y - 140, "META", {
+      fontSize: "20px", fontFamily: "'Press Start 2P'", color: "#22cc66",
+    }).setOrigin(0.5).setDepth(3);
   }
 
   private onLevelComplete() {
@@ -251,116 +429,10 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private makeCars() {
-    const vehicles: { key: string; speed: number; damage: number; scale: number }[] = [
-      // Small (1 damage)
-      { key: "sedan",        speed: 130, damage: 1, scale: 3.5 },
-      { key: "sedan-blue",   speed: 145, damage: 1, scale: 3.5 },
-      { key: "taxi",         speed: 110, damage: 1, scale: 3.5 },
-      { key: "police",       speed: 170, damage: 1, scale: 3.5 },
-      { key: "sports-red",   speed: 185, damage: 1, scale: 3.5 },
-      { key: "sports-green", speed: 175, damage: 1, scale: 3.5 },
-      { key: "convertible",  speed: 155, damage: 1, scale: 3.5 },
-      // Medium (2 damage)
-      { key: "suv",          speed: 120, damage: 2, scale: 4.0 },
-      { key: "suv-closed",   speed: 115, damage: 2, scale: 4.0 },
-      { key: "van",          speed: 100, damage: 2, scale: 4.0 },
-      { key: "van-large",    speed: 90,  damage: 2, scale: 4.0 },
-      // Large (3 damage)
-      { key: "truck",        speed: 85,  damage: 3, scale: 4.5 },
-      { key: "bus",          speed: 80,  damage: 3, scale: 4.5 },
-      { key: "firetruck",    speed: 95,  damage: 3, scale: 4.5 },
-    ];
-    // Shuffle the base list so types are mixed
-    const pool = [...vehicles];
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    // Space each car by its width + a fixed gap so none overlap
-    const GAP = 120;
-    const carDefs: { x: number; key: string; speed: number; damage: number; scale: number }[] = [];
-    let nextX = 600;
-    for (const v of pool) {
-      const carWidth = v.scale * 80;
-      carDefs.push({ x: nextX + carWidth / 2, ...v, key: `car_${v.key}` });
-      nextX += carWidth + GAP;
-    }
-
-    carDefs.forEach(({ x, key, speed, damage, scale }) => {
-      const dir = -1;
-      const car = this.add.image(x, ROAD_Y, key)
-        .setOrigin(0.5, 1)
-        .setScale(scale)
-        .setDepth(1)
-        .setFlipX(true);
-
-      const isLarge = damage >= 3;
-      const smokeFrames = isLarge
-        ? ["blackSmoke00", "blackSmoke02", "blackSmoke04", "blackSmoke06"]
-        : ["whitePuff00", "whitePuff02", "whitePuff04", "whitePuff06", "whitePuff08"];
-
-      const emitter = this.add.particles(x - scale * 20, ROAD_Y - 30, smokeFrames[0], {
-        frame: smokeFrames,
-        speed: { min: 8, max: 30 },
-        angle: { min: 250, max: 290 },
-        scale: { start: 0.18, end: 0.32 },
-        alpha: { start: 0.7, end: 0 },
-        lifespan: 1800,
-        frequency: 250,
-        gravityY: -30,
-        tint: isLarge ? 0x555555 : 0xb87a3a,
-      }).setDepth(1.5);
-
-      this.carEmitters.push({ car, emitter, dir, speed, damage, scale });
-    });
-  }
-
-  private showIntroMessage() {
-    const bg = this.add.rectangle(640, 360, 700, 160, 0x000000, 0.75)
-      .setScrollFactor(0).setDepth(20);
-
-    const title = this.add.text(640, 310, "NIVEL 1: EL TRÁFICO", {
-      fontSize: "26px", fontFamily: "'Press Start 2P'", color: "#ffffff", fontStyle: "bold",
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
-
-    const subtitle = this.add.text(640, 355, "Los autos queman combustible y\nliberan gases contaminantes al aire.", {
-      fontSize: "17px", fontFamily: "'Press Start 2P'", color: "#cccccc", align: "center",
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
-
-    const hint = this.add.text(640, 410, "— presiona cualquier tecla para comenzar —", {
-      fontSize: "13px", fontFamily: "'Press Start 2P'", color: "#aaaaaa",
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
-
-    this.tweens.add({ targets: hint, alpha: 0, duration: 500, yoyo: true, repeat: -1 });
-
-    this.levelComplete = true;
-    this.carEmitters.forEach(e => e.emitter.stop());
-
-    const dismiss = () => {
-      this.tweens.killTweensOf(hint);
-      this.tweens.add({
-        targets: [bg, title, subtitle, hint],
-        alpha: 0,
-        duration: 400,
-        onComplete: () => {
-          bg.destroy(); title.destroy(); subtitle.destroy(); hint.destroy();
-          this.levelComplete = false;
-          this.carEmitters.forEach(e => e.emitter.start());
-        },
-      });
-      this.input.keyboard!.off("keydown", dismiss);
-      this.input.gamepad!.off("down", dismiss);
-    };
-
-    this.input.keyboard!.once("keydown", dismiss);
-    this.input.gamepad!.once("down", dismiss);
-  }
-
-  private onHit(damage = 1) {
+  private onHit() {
     if (this.invincible || this.levelComplete) return;
     this.invincible = true;
-    this.health = Math.max(0, this.health - damage);
+    this.health = Math.max(0, this.health - this.difficultyMultiplier);
     this.drawHealthBar();
     this.player.setTint(0xff4444);
     this.cameras.main.shake(200, 0.005);
@@ -381,26 +453,94 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawHealthBar() {
-    const barX = 20;
-    const barY = 58;
-    const barW = 200;
-    const barH = 18;
+    const segments = 10;
+    const segH     = 16;
+    const segGap   = 1;
+    const innerW   = 22;
+    const railW    = 7;
+    const totalW   = innerW + railW * 2;
+    const totalH   = segments * segH + (segments - 1) * segGap;
+    const barX     = 20;
+    const barTop   = 38;
 
     this.healthBar.clear();
 
-    // Background
-    this.healthBar.fillStyle(0x333333);
-    this.healthBar.fillRect(barX, barY, barW, barH);
+    // ── Tapa superior ─────────────────────────────────────────────
+    this.healthBar.fillStyle(0x222222, 1);
+    this.healthBar.fillRect(barX, barTop - 10, totalW, 10);
+    this.healthBar.fillStyle(0x666666, 1);
+    this.healthBar.fillRect(barX + 2, barTop - 10, totalW - 4, 3);
 
-    // Fill color based on health
-    const ratio = this.health / 10;
-    const color = ratio > 0.5 ? 0x44cc44 : ratio > 0.25 ? 0xffaa00 : 0xff3333;
-    this.healthBar.fillStyle(color);
-    this.healthBar.fillRect(barX, barY, Math.floor(barW * ratio), barH);
+    // ── Fondo del área de segmentos ────────────────────────────────
+    this.healthBar.fillStyle(0x110000, 1);
+    this.healthBar.fillRect(barX + railW, barTop, innerW, totalH);
 
-    // Border
-    this.healthBar.lineStyle(2, 0xffffff, 0.6);
-    this.healthBar.strokeRect(barX, barY, barW, barH);
+    // ── Segmentos (de abajo hacia arriba) ─────────────────────────
+    for (let i = 0; i < segments; i++) {
+      const segY   = barTop + totalH - (i + 1) * segH - i * segGap;
+      const filled = i < this.health;
+
+      if (filled) {
+        // Mitad inferior: rojo
+        this.healthBar.fillStyle(0xcc2200, 1);
+        this.healthBar.fillRect(barX + railW, segY + segH / 2, innerW, segH / 2);
+        // Mitad superior: naranja
+        this.healthBar.fillStyle(0xff7722, 1);
+        this.healthBar.fillRect(barX + railW, segY, innerW, segH / 2);
+        // Brillo
+        this.healthBar.fillStyle(0xffcc66, 0.35);
+        this.healthBar.fillRect(barX + railW, segY, innerW, 2);
+      } else {
+        this.healthBar.fillStyle(0x1e0000, 1);
+        this.healthBar.fillRect(barX + railW, segY, innerW, segH);
+      }
+
+      // Línea divisoria entre segmentos
+      this.healthBar.fillStyle(0x000000, 1);
+      this.healthBar.fillRect(barX + railW, segY + segH - 1, innerW, 1);
+    }
+
+    // ── Riel izquierdo ─────────────────────────────────────────────
+    this.healthBar.fillStyle(0x888888, 1);
+    this.healthBar.fillRect(barX, barTop, railW, totalH);
+    this.healthBar.fillStyle(0xdddddd, 1);
+    this.healthBar.fillRect(barX, barTop, 2, totalH);
+    this.healthBar.fillStyle(0x444444, 1);
+    this.healthBar.fillRect(barX + railW - 2, barTop, 2, totalH);
+    // Remaches
+    this.healthBar.fillStyle(0xaaaaaa, 1);
+    for (let y = barTop + 6; y < barTop + totalH - 4; y += 24) {
+      this.healthBar.fillRect(barX + 1, y, railW - 2, 4);
+    }
+
+    // ── Riel derecho ──────────────────────────────────────────────
+    const rx = barX + railW + innerW;
+    this.healthBar.fillStyle(0x888888, 1);
+    this.healthBar.fillRect(rx, barTop, railW, totalH);
+    this.healthBar.fillStyle(0xdddddd, 1);
+    this.healthBar.fillRect(rx, barTop, 2, totalH);
+    this.healthBar.fillStyle(0x444444, 1);
+    this.healthBar.fillRect(rx + railW - 2, barTop, 2, totalH);
+    for (let y = barTop + 6; y < barTop + totalH - 4; y += 24) {
+      this.healthBar.fillRect(rx + 1, y, railW - 2, 4);
+    }
+
+    // ── Tapa inferior ─────────────────────────────────────────────
+    this.healthBar.fillStyle(0x222222, 1);
+    this.healthBar.fillRect(barX, barTop + totalH, totalW, 8);
+    this.healthBar.fillStyle(0x555555, 1);
+    this.healthBar.fillRect(barX + 2, barTop + totalH, totalW - 4, 3);
+
+    // ── Gema azul ─────────────────────────────────────────────────
+    const gemX = barX + totalW / 2;
+    const gemY = barTop + totalH + 18;
+    this.healthBar.fillStyle(0x111133, 1);
+    this.healthBar.fillCircle(gemX, gemY, 11);
+    this.healthBar.fillStyle(0x2255cc, 1);
+    this.healthBar.fillCircle(gemX, gemY, 9);
+    this.healthBar.fillStyle(0x88aaff, 0.7);
+    this.healthBar.fillCircle(gemX - 3, gemY - 3, 4);
+    this.healthBar.fillStyle(0xffffff, 0.5);
+    this.healthBar.fillCircle(gemX - 3, gemY - 4, 2);
   }
-
 }
