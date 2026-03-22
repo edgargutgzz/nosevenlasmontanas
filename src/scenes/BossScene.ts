@@ -254,7 +254,7 @@ export class BossScene extends Phaser.Scene {
     // Shockwave ring expanding from feet
     const ring = this.add.graphics().setDepth(15);
     let ringRadius = 5;
-    const ringTween = this.time.addEvent({
+    this.time.addEvent({
       delay: 16, repeat: 25,
       callback: () => {
         ring.clear();
@@ -794,7 +794,7 @@ export class BossScene extends Phaser.Scene {
   private spawnProjectile(x: number, y: number, vx: number, vy: number, color: number, gravity = false) {
     const radius = 14;
     const key    = `bproj_${Date.now()}_${Math.random()}`;
-    const gfx    = this.make.graphics({ x: 0, y: 0, add: false });
+    const gfx    = this.make.graphics({ x: 0, y: 0 } as any);
     gfx.fillStyle(Phaser.Display.Color.ValueToColor(color).darken(40).color, 1);
     gfx.fillCircle(radius, radius, radius);
     gfx.fillStyle(color, 1);
@@ -821,7 +821,7 @@ export class BossScene extends Phaser.Scene {
       const angle = (i / 8) * Math.PI * 2;
       const speed = Phaser.Math.Between(60, 130);
       const key   = `bptcl_${Date.now()}_${i}`;
-      const gfx   = this.make.graphics({ x: 0, y: 0, add: false });
+      const gfx   = this.make.graphics({ x: 0, y: 0 } as any);
       gfx.fillStyle(colors[i % colors.length], 1);
       gfx.fillCircle(4, 4, 4);
       gfx.generateTexture(key, 8, 8);
@@ -944,7 +944,7 @@ export class BossScene extends Phaser.Scene {
   private spawnMaskAt(x: number) {
     const y   = FLOOR_Y - 48;
     const key = `bmask_${x}`;
-    const gfx = this.make.graphics({ x: 0, y: 0, add: false });
+    const gfx = this.make.graphics({ x: 0, y: 0 } as any);
     gfx.fillStyle(0xe8f4ff, 1);
     gfx.fillRoundedRect(2, 8, 44, 28, 6);
     gfx.lineStyle(1.5, 0xaaccee, 0.7);
