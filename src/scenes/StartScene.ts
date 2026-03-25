@@ -61,16 +61,7 @@ export class StartScene extends Phaser.Scene {
   }
 
   protected startGame() {
-    const container = this.children.list.find(
-      (c) => c instanceof Phaser.GameObjects.Container
-    ) as Phaser.GameObjects.Container;
-
-    this.tweens.add({
-      targets: container,
-      y: -this.scale.height,
-      duration: 600,
-      ease: "Quad.In",
-      onComplete: () => this.scene.start("GameScene"),
-    });
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("DifficultyScene"));
   }
 }

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { StartScene } from "./scenes/StartScene";
+import { DifficultyScene } from "./scenes/DifficultyScene";
 import { GameScene } from "./scenes/GameScene";
 import { BossScene } from "./scenes/BossScene";
 import { LevelCompleteScene } from "./scenes/LevelCompleteScene";
@@ -25,7 +26,7 @@ const startGame = () => new Phaser.Game({
       debug: false,
     },
   },
-  scene: [StartScene, GameScene, BossScene, LevelCompleteScene, GameOverScene],
+  scene: [StartScene, DifficultyScene, GameScene, BossScene, LevelCompleteScene, GameOverScene],
   scale: {
     mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH,

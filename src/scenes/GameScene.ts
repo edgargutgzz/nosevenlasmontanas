@@ -2,9 +2,10 @@ import Phaser from "phaser";
 
 const SIDEWALK_Y  = 660;
 const GROUND_Y    = SIDEWALK_Y - 70; // visual top of grass tile = 610
-const LEVEL_WIDTH = 6400;
+const LEVEL_WIDTH   = 9600;
 
-const TRANSITION_X = 3200;
+const TRANSITION_X  = 3200; // bosque → ciudad
+const INDUSTRY_X    = 6400; // ciudad → ciudad+autos+industria
 
 const PROJ_LOW  = GROUND_Y - 28;
 const PROJ_MID  = GROUND_Y - 90;
@@ -34,8 +35,10 @@ export class GameScene extends Phaser.Scene {
   private smogOverlay!:   Phaser.GameObjects.Rectangle;
   private vignetteRect!:  Phaser.GameObjects.Rectangle;
 
-  private waveIndex       = 0;
-  private bgTile!:        Phaser.GameObjects.TileSprite;
+  private waveIndex         = 0;
+  private carSpawnerStarted = false;
+  private bgTile!:          Phaser.GameObjects.TileSprite;
+  private industrySky!:     Phaser.GameObjects.Rectangle;
 
   constructor() { super("GameScene"); }
 
@@ -63,6 +66,9 @@ export class GameScene extends Phaser.Scene {
     this.load.image("ptcl_spark3", "/assets/particles/spark_03.png");
     for (let i = 0; i <= 8; i++)
       this.load.image(`expl_${i}`, `/assets/particles/explosion/explosion0${i}.png`);
+
+    for (const v of ["sedan","sedan_blue","bus","truck","van","suv","truck_trailer","truckdark"])
+      this.load.image(`veh_${v}`, `/assets/vehicles/${v}.png`);
     // this.load.audio("sfx_jump",       "/assets/sfx/SoundJump1.wav");
     // this.load.audio("sfx_hit",        "/assets/sfx/SoundPlayerHit.wav");
     // this.load.audio("sfx_explode",    "/assets/sfx/SoundExplosionSmall.wav");
@@ -79,7 +85,8 @@ export class GameScene extends Phaser.Scene {
     this.jumpsAvailable       = 1;
     this.waveIndex            = 0;
 
-    this.difficultyMultiplier = this.registry.get("difficulty") === "hard" ? 2 : 1;
+    this.difficultyMultiplier = this.registry.get("difficultyMultiplier") ?? 1;
+    this.carSpawnerStarted    = false;
 
     this.physics.world.setBounds(0, -800, LEVEL_WIDTH, 1520);
 
@@ -109,8 +116,6 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.projectiles, (_p, proj) => {
       const p = proj as Phaser.Physics.Arcade.Image;
       const damage = p.getData("damage") as number ?? 1;
-      this.spawnParticles(p.x, p.y, p.tintTopLeft || 0xff6600);
-      this.sfx("sfx_explode", 0.5);
       p.destroy();
       this.onHit(damage);
     });
@@ -169,12 +174,18 @@ export class GameScene extends Phaser.Scene {
   update() {
     if (this.levelComplete) return;
     this.bgTile.tilePositionX = this.cameras.main.scrollX * 0.2;
-
-    // Fade out trees as player enters city zone
-    const fadeStart = TRANSITION_X + 100;
-    const fadeEnd   = TRANSITION_X + 700;
-    const treeAlpha = 1 - Phaser.Math.Clamp((this.player.x - fadeStart) / (fadeEnd - fadeStart), 0, 1);
+    const treeAlpha = 1 - Phaser.Math.Clamp((this.player.x - TRANSITION_X - 100) / 600, 0, 1);
     this.bgTile.setAlpha(treeAlpha);
+
+    // Sky se oscurece/anaranja al entrar a zona 3
+    const industryAlpha = Phaser.Math.Clamp((this.player.x - INDUSTRY_X) / 1200, 0, 0.55);
+    this.industrySky.setAlpha(industryAlpha);
+
+    // Trigger car spawner when entering industry zone
+    if (!this.carSpawnerStarted && this.player.x >= INDUSTRY_X) {
+      this.carSpawnerStarted = true;
+      this.startCarSpawner();
+    }
 
     const onGround   = this.player.body!.blocked.down;
     if (onGround) {
@@ -245,48 +256,6 @@ export class GameScene extends Phaser.Scene {
 
   // ── Particles ────────────────────────────────────────────────────
 
-  private spawnParticles(x: number, y: number, _color: number) {
-    // Explosion animation — step through frames manually
-    const frames = 9;
-    const frameDuration = 55; // ms per frame
-    let frame = 0;
-    const img = this.add.image(x, y, "expl_0")
-      .setDepth(7).setScale(0.7).setAlpha(0.92);
-    const timer = this.time.addEvent({
-      delay: frameDuration,
-      repeat: frames - 1,
-      callback: () => {
-        frame++;
-        if (frame < frames) {
-          img.setTexture(`expl_${frame}`);
-        } else {
-          img.destroy();
-          timer.remove();
-        }
-      },
-    });
-
-    // A few sparks flying out
-    const sparkKeys = ["ptcl_spark1", "ptcl_spark2", "ptcl_spark3"];
-    for (let i = 0; i < 5; i++) {
-      const angle = (i / 5) * Math.PI * 2;
-      const speed = Phaser.Math.Between(50, 120);
-      const spark = this.add.image(x, y, sparkKeys[i % sparkKeys.length])
-        .setDepth(6)
-        .setScale(Phaser.Math.FloatBetween(0.1, 0.25))
-        .setTint(0xff6600)
-        .setAngle(Phaser.Math.Between(0, 360));
-      this.tweens.add({
-        targets: spark,
-        x: x + Math.cos(angle) * speed,
-        y: y + Math.sin(angle) * speed,
-        alpha: 0, scale: 0,
-        duration: Phaser.Math.Between(300, 500),
-        ease: "Quad.Out",
-        onComplete: () => spark.destroy(),
-      });
-    }
-  }
 
 
 
@@ -297,11 +266,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private get spawnDelay() {
-    return Phaser.Math.Linear(2200, 900, this.progressFactor);
+    return Phaser.Math.Linear(2200, 600, this.progressFactor);
   }
 
   private get projSpeedMult() {
-    return Phaser.Math.Linear(1.0, 1.7, this.progressFactor);
+    return Phaser.Math.Linear(1.0, 2.2, this.progressFactor);
   }
 
   // ── World ─────────────────────────────────────────────────────────
@@ -313,26 +282,31 @@ export class GameScene extends Phaser.Scene {
     const grassW   = TRANSITION_X;
     const asphaltW = LEVEL_WIDTH - TRANSITION_X;
 
-    // Solid base fills (block transparency)
+    // Solid base fills
     this.add.rectangle(TRANSITION_X / 2, SIDEWALK_Y + 100, grassW, 200, 0xc8904c).setDepth(0);
     this.add.rectangle(TRANSITION_X + asphaltW / 2, SIDEWALK_Y + 100, asphaltW, 200, 0x8a9fa0).setDepth(0);
 
-    // Dirt fill — grass zone
-    this.add.tileSprite(0, SIDEWALK_Y - 2, grassW, 202, "ground_fill")
-      .setOrigin(0, 0).setDepth(1);
-    // Asphalt fill — city zone
-    this.add.tileSprite(TRANSITION_X, SIDEWALK_Y - 2, asphaltW, 202, "asphalt_fill")
-      .setOrigin(0, 0).setDepth(1);
+    // Ground fills
+    this.add.tileSprite(0, SIDEWALK_Y - 2, grassW, 202, "ground_fill").setOrigin(0, 0).setDepth(1);
+    this.add.tileSprite(TRANSITION_X, SIDEWALK_Y - 2, asphaltW, 202, "asphalt_fill").setOrigin(0, 0).setDepth(1);
 
-    // Grass top row
-    this.add.tileSprite(0, SIDEWALK_Y, grassW, 70, "ground_top")
-      .setOrigin(0, 1).setDepth(2);
-    // Asphalt top row
-    this.add.tileSprite(TRANSITION_X, SIDEWALK_Y, asphaltW, 70, "asphalt_top")
-      .setOrigin(0, 1).setDepth(2);
+    // Ground tops
+    this.add.tileSprite(0, SIDEWALK_Y, grassW, 70, "ground_top").setOrigin(0, 1).setDepth(2);
+    this.add.tileSprite(TRANSITION_X, SIDEWALK_Y, asphaltW, 70, "asphalt_top").setOrigin(0, 1).setDepth(2);
 
-    // ── City buildings (background decoration after TRANSITION_X) ──
+    // Road markings in industry zone
+    const dashG = this.add.graphics().setDepth(2);
+    dashG.fillStyle(0xddbb00, 0.5);
+    for (let x = INDUSTRY_X; x < LEVEL_WIDTH; x += 80) {
+      dashG.fillRect(x, SIDEWALK_Y + 28, 50, 5);
+    }
+
+    // ── City buildings ────────────────────────────────────────────
     this.buildCityscape(TRANSITION_X, GROUND_Y);
+
+    // ── Zona 3: industria ─────────────────────────────────────────
+    this.buildCityscape(INDUSTRY_X, GROUND_Y);
+    this.buildIndustrialBackground();
 
     const canvas = document.createElement("canvas");
     canvas.width = 64; canvas.height = 16;
@@ -385,6 +359,10 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(-2);
+
+    // Industry sky overlay — naranja sucio, se funde al entrar a zona 3
+    this.industrySky = this.add.rectangle(W / 2, H / 2, W, H, 0xc47a2a)
+      .setScrollFactor(0).setDepth(-1).setAlpha(0);
   }
 
   // ── Pollution spawner (speed ramps with distance) ─────────────────
@@ -568,9 +546,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.sfx("sfx_goal", 0.8);
     this.cameras.main.fadeOut(800, 255, 255, 255);
-    this.cameras.main.once("camerafadeoutcomplete", () => {
-      this.scene.start("BossScene");
-    });
+    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("BossScene"));
   }
 
   private onHit(damage = 1) {
@@ -721,5 +697,110 @@ export class GameScene extends Phaser.Scene {
       this.criticalTween = null;
       this.healthBar.setAlpha(1);
     }
+  }
+
+  // ── Zona 3: industria ─────────────────────────────────────────────
+
+  private buildIndustrialBackground() {
+    const g = this.add.graphics().setDepth(0);
+    const stacks: [number, number, number][] = [ // [x, height, width]
+      [INDUSTRY_X + 200,  220, 40], [INDUSTRY_X + 240,  180, 28],
+      [INDUSTRY_X + 700,  260, 50], [INDUSTRY_X + 750,  200, 35],
+      [INDUSTRY_X + 1200, 280, 55], [INDUSTRY_X + 1260, 210, 38],
+      [INDUSTRY_X + 1700, 250, 48], [INDUSTRY_X + 1760, 200, 32],
+      [INDUSTRY_X + 2200, 270, 52], [INDUSTRY_X + 2260, 220, 36],
+      [INDUSTRY_X + 2700, 260, 46], [INDUSTRY_X + 2750, 195, 30],
+    ];
+
+    for (const [x, h, w] of stacks) {
+      // Stack body
+      g.fillStyle(0x555566, 1);
+      g.fillRect(x, GROUND_Y - h, w, h);
+      // Darker stripe
+      g.fillStyle(0x444455, 1);
+      g.fillRect(x + w * 0.6, GROUND_Y - h, w * 0.4, h);
+      // Top rim
+      g.fillStyle(0x777788, 1);
+      g.fillRect(x - 4, GROUND_Y - h - 10, w + 8, 12);
+    }
+  }
+
+  private startCarSpawner() {
+    const CAR_KEYS = [
+      { key: "veh_sedan",         scale: 3.5, speed: 280 },
+      { key: "veh_sedan_blue",    scale: 3.5, speed: 260 },
+      { key: "veh_suv",           scale: 3.5, speed: 240 },
+      { key: "veh_van",           scale: 3.5, speed: 220 },
+      { key: "veh_truck",         scale: 4,   speed: 180 },
+      { key: "veh_truck_trailer", scale: 4,   speed: 160 },
+      { key: "veh_bus",           scale: 4,   speed: 170 },
+      { key: "veh_truckdark",     scale: 4,   speed: 190 },
+    ];
+
+    const spawnCar = () => {
+      if (this.levelComplete) return;
+      const def = CAR_KEYS[Math.floor(Math.random() * CAR_KEYS.length)];
+      // Spawn slightly off right edge of camera
+      const spawnX = this.cameras.main.scrollX + this.scale.width + 100;
+      // Two road lanes
+      const lane = Math.random() < 0.5 ? SIDEWALK_Y - 38 : SIDEWALK_Y - 20;
+      const car = this.add.image(spawnX, lane, def.key)
+        .setScale(def.scale)
+        .setDepth(3)
+        .setFlipX(true); // facing left
+
+      // Drive left
+      this.tweens.add({
+        targets: car,
+        x: -200,
+        duration: ((spawnX + 200) / def.speed) * 1000,
+        ease: "Linear",
+        onComplete: () => car.destroy(),
+      });
+
+      // Exhaust puff every ~1.5s while car is alive
+      const exhaustTimer = this.time.addEvent({
+        delay: 1200 + Math.random() * 600,
+        loop: true,
+        callback: () => {
+          if (!car.active || this.levelComplete) { exhaustTimer.remove(); return; }
+          this.spawnCarExhaust(car.x + (def.key.includes("truck") ? 60 : 30), car.y - 5);
+        },
+      });
+
+      // Next car
+      const nextDelay = 1800 + Math.random() * 2500;
+      this.time.delayedCall(nextDelay, spawnCar);
+    };
+
+    // Start with a small delay and spawn 2-3 cars right away staggered
+    this.time.delayedCall(800,  spawnCar);
+    this.time.delayedCall(2200, spawnCar);
+    this.time.delayedCall(3800, spawnCar);
+  }
+
+  private spawnCarExhaust(x: number, y: number) {
+    const isPM25 = Math.random() < 0.5;
+    const radius = isPM25 ? 5 : 12;
+    const color  = 0x888888;
+    const damage = isPM25 ? 3 : 1;
+
+    const key = `exhaust_${Date.now()}_${Math.random()}`;
+    const gfx = this.make.graphics({ x: 0, y: 0 } as any);
+    gfx.fillStyle(0x555555, 0.8);
+    gfx.fillCircle(radius, radius, radius);
+    gfx.fillStyle(color, 0.6);
+    gfx.fillCircle(radius, radius, radius * 0.7);
+    gfx.generateTexture(key, radius * 2, radius * 2);
+    gfx.destroy();
+
+    const proj = this.projectiles.create(x, y, key) as Phaser.Physics.Arcade.Image;
+    proj.setDepth(4).setAlpha(0.85);
+    proj.setData("damage", damage);
+    (proj.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
+    // Drift left and upward (exhaust from moving car)
+    proj.setVelocity(-(60 + Math.random() * 40), -(30 + Math.random() * 30));
+    this.tweens.add({ targets: proj, alpha: 0, duration: 3000, ease: "Quad.Out", onComplete: () => proj.destroy() });
+    proj.on("destroy", () => { if (this.textures.exists(key)) this.textures.remove(key); });
   }
 }
