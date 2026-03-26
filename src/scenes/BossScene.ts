@@ -319,15 +319,15 @@ export class BossScene extends Phaser.Scene {
     const lx      = this.pad?.leftStick.x ?? 0;
     const ly      = this.pad?.leftStick.y ?? 0;
     const buttonA = this.pad?.isButtonDown(0) ?? false;
-    const dpadUp  = (this.pad?.up ?? false) || ly < -0.3;
+    const dpadUp  = (this.pad?.up ?? false) || ly < -0.1;
     const buttonAJust = buttonA && !this.wasButtonDown;
     const dpadUpJust  = dpadUp && !this.wasDpadUp;
     this.wasButtonDown = buttonA;
     this.wasDpadUp     = dpadUp;
 
-    const goLeft  = this.cursors.left.isDown  || lx < -0.3 || (this.pad?.left  ?? false);
-    const goRight = this.cursors.right.isDown || lx >  0.3 || (this.pad?.right ?? false);
-    const crouch  = this.cursors.down.isDown  || (this.pad?.down ?? false) || ly > 0.3;
+    const goLeft  = this.cursors.left.isDown  || lx < -0.1 || (this.pad?.left  ?? false);
+    const goRight = this.cursors.right.isDown || lx >  0.1 || (this.pad?.right ?? false);
+    const crouch  = this.cursors.down.isDown  || (this.pad?.down ?? false) || ly > 0.1;
     const jump    = Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
                     Phaser.Input.Keyboard.JustDown(this.cursors.space!) || buttonAJust || dpadUpJust;
 
