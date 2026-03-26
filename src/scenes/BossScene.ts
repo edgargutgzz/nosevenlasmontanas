@@ -343,9 +343,23 @@ export class BossScene extends Phaser.Scene {
       body.setSize(64, 88, false).setOffset(16, 20);
     }
 
-    if (goLeft)       { this.player.setVelocityX(-220); this.player.setFlipX(true);  }
-    else if (goRight) { this.player.setVelocityX( 220); this.player.setFlipX(false); }
-    else              { this.player.setVelocityX(0); }
+    const MAX_SPEED = 220;
+    const ACCEL     = 900;
+    const DRAG      = 1200;
+    if (goLeft) {
+      this.player.setAccelerationX(-ACCEL);
+      body.setDragX(0);
+      this.player.setFlipX(true);
+    } else if (goRight) {
+      this.player.setAccelerationX(ACCEL);
+      body.setDragX(0);
+      this.player.setFlipX(false);
+    } else {
+      this.player.setAccelerationX(0);
+      body.setDragX(DRAG);
+    }
+    const vx = this.player.body!.velocity.x;
+    if (Math.abs(vx) > MAX_SPEED) this.player.setVelocityX(Math.sign(vx) * MAX_SPEED);
 
     if (jump && this.jumpsAvailable > 0 && !this.isCrouching) {
       this.player.setVelocityY(-520);
