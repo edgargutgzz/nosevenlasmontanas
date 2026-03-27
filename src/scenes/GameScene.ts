@@ -420,6 +420,7 @@ export class GameScene extends Phaser.Scene {
     [[PROJ_LOW,  0, true],[PROJ_MID, 200, true],[PROJ_HIGH, 400]], // PM2.5 barrage
   ];
 
+  // @ts-ignore — reserved for future use
   private startPollutionSpawner() {
     const scheduleNext = () => {
       this.time.addEvent({
