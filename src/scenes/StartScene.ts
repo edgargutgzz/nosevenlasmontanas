@@ -54,8 +54,12 @@ export class StartScene extends Phaser.Scene {
     };
 
     // Línea 1 aparece a los 0.8s, línea 2 después, luego prompt
-    this.time.delayedCall(700, () => {
+    this.time.delayedCall(400, () => {
+      this.sound.stopAll();
       this.sound.play("venus", { loop: true, volume: 0.6 });
+    });
+
+    this.time.delayedCall(3600, () => {
       flicker(line1, () => {
         this.time.delayedCall(400, () => {
           flicker(line2, () => {

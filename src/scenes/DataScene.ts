@@ -146,7 +146,7 @@ export class DataScene extends Phaser.Scene {
 
     // ── Prompt final ──────────────────────────────────────────────
     const showPrompt = () => {
-      this.time.delayedCall(5000, () => this.advance());
+      this.time.delayedCall(4500, () => this.advance());
     };
   }
 
@@ -161,12 +161,12 @@ export class DataScene extends Phaser.Scene {
   private advance() {
     const alarm = this.sound.get("sfx_alarm");
     if (alarm) {
-      this.tweens.add({ targets: alarm, volume: 0, duration: 1500, onComplete: () => alarm.stop() });
-    }
-    this.cameras.main.fadeOut(600, 0, 0, 0);
-    this.cameras.main.once("camerafadeoutcomplete", () => {
-      this.sound.stopAll();
+      this.tweens.add({ targets: alarm, volume: 0, duration: 800, onComplete: () => {
+        alarm.stop();
+        this.scene.start("StartScene");
+      }});
+    } else {
       this.scene.start("StartScene");
-    });
+    }
   }
 }

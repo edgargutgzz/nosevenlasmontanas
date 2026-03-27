@@ -2,14 +2,17 @@ import Phaser from "phaser";
 
 const CHARACTERS = {
   normal: [
-    { key: "malePerson",   label: "JUGADOR 1" },
-    { key: "femalePerson", label: "JUGADOR 2" },
+    { key: "malePerson",   hasWalk: true },
+    { key: "femalePerson", hasWalk: true },
   ],
   dificil: [
-    { key: "maleAdventurer",   label: "JUGADOR 1" },
-    { key: "femaleAdventurer", label: "JUGADOR 2" },
+    { key: "maleAdventurer",   hasWalk: true },
+    { key: "femaleAdventurer", hasWalk: true  },
   ],
 } as const;
+
+const WALK_FRAMES = 8;
+const WALK_FPS    = 100; // ms por frame
 
 export class CharacterScene extends Phaser.Scene {
   private selected = 0;
@@ -17,8 +20,15 @@ export class CharacterScene extends Phaser.Scene {
   private inputEnabled = false;
   private inputCooldown = 0;
   private pad: Phaser.Input.Gamepad.Gamepad | null = null;
-  private selectionGraphics!: Phaser.GameObjects.Graphics;
-  private options: { key: string; label: string }[] = [];
+  private cardBgs: Phaser.GameObjects.Rectangle[] = [];
+  private cardBorders: Phaser.GameObjects.Graphics[] = [];
+  private charImages: Phaser.GameObjects.Image[] = [];
+  private flashTween: Phaser.Tweens.Tween | null = null;
+  private animTimer: Phaser.Time.TimerEvent | null = null;
+  private animFrame = 0;
+  private accentColor = 0x2ecc87;
+  private bgSelected  = 0x0e1a16;
+  private options: { key: string; hasWalk: boolean }[] = [];
 
   constructor() { super("CharacterScene"); }
 
@@ -26,6 +36,11 @@ export class CharacterScene extends Phaser.Scene {
     const all = [...CHARACTERS.normal, ...CHARACTERS.dificil];
     all.forEach(c => {
       this.load.image(`idle_${c.key}`, `/assets/character/character_${c.key}_idle.png`);
+      if (c.hasWalk) {
+        for (let i = 0; i < WALK_FRAMES; i++) {
+          this.load.image(`walk_${c.key}_${i}`, `/assets/character/character_${c.key}_walk${i}.png`);
+        }
+      }
     });
     if (!this.cache.audio.exists("sfx_select"))
       this.load.audio("sfx_select", "/assets/sfx/vgmenuselect.ogg");
@@ -36,6 +51,10 @@ export class CharacterScene extends Phaser.Scene {
     this.confirmed = false;
     this.inputEnabled = false;
     this.inputCooldown = 0;
+    this.cardBgs = [];
+    this.cardBorders = [];
+    this.charImages = [];
+    this.animFrame = 0;
 
     const W = this.scale.width;
     const H = this.scale.height;
@@ -44,72 +63,54 @@ export class CharacterScene extends Phaser.Scene {
     this.options = [...CHARACTERS[difficulty]];
 
     const isHard = difficulty === "dificil";
-    const accentColor = isHard ? 0xff6644 : 0x44cc88;
-    const accentHex   = isHard ? "#ff6644" : "#44cc88";
-    const groupLabel  = isHard ? "POBLACION SENSIBLE" : "POBLACION GENERAL";
+    this.accentColor = isHard ? 0xff5533 : 0x2ecc87;
+    this.bgSelected  = isHard ? 0x1a0e0b : 0x0e1a16;
 
     // ── Background ────────────────────────────────────────────────
-    const bgFill = this.add.graphics();
-    bgFill.fillStyle(0x080c10, 1);
-    bgFill.fillRect(0, 0, W, H);
-
-    // ── Panel ─────────────────────────────────────────────────────
-    const pX = W * 0.06;
-    const pY = H * 0.05;
-    const pW = W * 0.88;
-    const pH = H * 0.90;
-
-    const panel = this.add.graphics();
-    panel.fillStyle(0x000000, 0.4);
-    panel.fillRect(pX + 5, pY + 5, pW, pH);
-    panel.fillGradientStyle(0x0c1018, 0x0c1018, 0x101820, 0x101820, 0.97);
-    panel.fillRect(pX, pY, pW, pH);
-    panel.lineStyle(2, 0x1e6070, 0.9);
-    panel.strokeRect(pX, pY, pW, pH);
-    panel.lineStyle(1, 0x0f3040, 0.5);
-    panel.strokeRect(pX + 6, pY + 6, pW - 12, pH - 12);
+    this.add.rectangle(0, 0, W, H, 0x000000).setOrigin(0);
 
     // ── Título ────────────────────────────────────────────────────
-    this.add.text(W / 2, pY + 32, "ELIGE TU PERSONAJE", {
+    const titleText = this.add.text(W / 2, H * 0.055, "ELIGE TU PERSONAJE", {
       fontSize: "22px", fontFamily: "'Press Start 2P'",
-      color: "#ffffff", stroke: "#020608", strokeThickness: 8,
+      color: "#ffffff",
     }).setOrigin(0.5, 0);
+    const titleGrad = titleText.context.createLinearGradient(0, 0, 0, titleText.height);
+    titleGrad.addColorStop(0, "#ffffff");
+    titleGrad.addColorStop(1, "#ff8833");
+    titleText.setFill(titleGrad);
 
-    this.add.text(W / 2, pY + 70, groupLabel, {
-      fontSize: "10px", fontFamily: "'Press Start 2P'",
-      color: accentHex,
-    }).setOrigin(0.5, 0);
-
-    const sep = this.add.graphics();
-    sep.lineStyle(1, 0x1e4a58, 0.7);
-    sep.lineBetween(pX + 14, pY + 94, pX + pW - 14, pY + 94);
-
-    // ── Cards de personaje ────────────────────────────────────────
-    const cardY = pY + 120;
-    const cardH = pH - 148;
-    const gap   = W * 0.06;
-    const cardW = (pW - gap * 3) / 2;
-
-    this.selectionGraphics = this.add.graphics();
+    // ── Cards ─────────────────────────────────────────────────────
+    const cardY  = H * 0.15;
+    const cardH  = H * 0.72;
+    const gap    = W * 0.04;
+    const margin = W * 0.06;
+    const cardW  = (W - margin * 2 - gap) / 2;
+    const cardX0 = margin;
 
     this.options.forEach((opt, i) => {
-      const cardX = pX + gap + i * (cardW + gap);
+      const cardX = cardX0 + i * (cardW + gap);
+
+      // Sombra
+      const shadow = this.add.graphics();
+      shadow.fillStyle(0x000000, 0.07);
+      shadow.fillRect(cardX + 5, cardY + 5, cardW, cardH);
 
       // Fondo card
-      const card = this.add.graphics();
-      card.fillStyle(0x0a1520, 0.95);
-      card.fillRect(cardX, cardY, cardW, cardH);
+      const bg = this.add.rectangle(cardX, cardY, cardW, cardH, 0x111111).setOrigin(0);
+      this.cardBgs.push(bg);
 
-      // Sprite idle centrado
-      const sprite = this.add.image(cardX + cardW / 2, cardY + cardH * 0.45, `idle_${opt.key}`)
+      // Barra de color superior
+      this.add.rectangle(cardX, cardY, cardW, 5, this.accentColor).setOrigin(0);
+
+      // Borde
+      const border = this.add.graphics();
+      this.cardBorders.push(border);
+
+      // Sprite
+      const img = this.add.image(cardX + cardW / 2, cardY + cardH / 2, `idle_${opt.key}`)
         .setOrigin(0.5)
         .setScale(2.2);
-
-      // Nombre
-      this.add.text(cardX + cardW / 2, cardY + cardH - 36, opt.label, {
-        fontSize: "13px", fontFamily: "'Press Start 2P'",
-        color: "#ffffff",
-      }).setOrigin(0.5, 0);
+      this.charImages.push(img);
     });
 
     // ── Input ─────────────────────────────────────────────────────
@@ -150,35 +151,59 @@ export class CharacterScene extends Phaser.Scene {
   private updateUI() {
     const W = this.scale.width;
     const H = this.scale.height;
-    const pX = W * 0.06;
-    const pY = H * 0.05;
-    const pW = W * 0.88;
-    const pH = H * 0.90;
-    const cardY = pY + 120;
-    const cardH = pH - 148;
-    const gap   = W * 0.06;
-    const cardW = (pW - gap * 3) / 2;
+    const cardY  = H * 0.15;
+    const cardH  = H * 0.72;
+    const gap    = W * 0.04;
+    const margin = W * 0.06;
+    const cardW  = (W - margin * 2 - gap) / 2;
+    const cardX0 = margin;
 
-    const difficulty = this.registry.get("difficulty") as string;
-    const isHard = difficulty === "dificil";
-    const accentColor = isHard ? 0xff6644 : 0x44cc88;
+    if (this.flashTween) { this.flashTween.stop(); this.flashTween = null; }
+    if (this.animTimer)  { this.animTimer.remove(); this.animTimer = null; }
 
-    this.selectionGraphics.clear();
-    this.options.forEach((_, i) => {
-      const cardX = pX + gap + i * (cardW + gap);
-      const isSelected = i === this.selected;
-      this.selectionGraphics.lineStyle(isSelected ? 3 : 1, accentColor, isSelected ? 0.9 : 0.2);
-      this.selectionGraphics.strokeRect(cardX, cardY, cardW, cardH);
-      if (isSelected) {
-        this.selectionGraphics.fillStyle(accentColor, 0.06);
-        this.selectionGraphics.fillRect(cardX, cardY, cardW, cardH);
-      }
+    // Resetear todos los sprites a idle
+    this.options.forEach((opt, i) => {
+      this.charImages[i].setTexture(`idle_${opt.key}`);
     });
+
+    // Borders y backgrounds
+    this.cardBgs.forEach((bg, i) => {
+      bg.setFillStyle(i === this.selected ? this.bgSelected : 0x111111);
+    });
+
+    this.cardBorders.forEach((g, i) => {
+      g.clear();
+      const cardX = cardX0 + i * (cardW + gap);
+      const isSelected = i === this.selected;
+      g.lineStyle(isSelected ? 3 : 1, isSelected ? this.accentColor : 0x333333, 1);
+      g.strokeRect(cardX, cardY, cardW, cardH);
+    });
+
+    this.flashTween = this.tweens.add({
+      targets: this.cardBorders[this.selected], alpha: 0.4,
+      duration: 500, ease: "Sine.easeInOut",
+      yoyo: true, repeat: -1,
+    });
+
+    // Animación walk en el personaje seleccionado
+    const selOpt = this.options[this.selected];
+    if (selOpt.hasWalk) {
+      this.animFrame = 0;
+      this.animTimer = this.time.addEvent({
+        delay: WALK_FPS,
+        loop: true,
+        callback: () => {
+          this.charImages[this.selected].setTexture(`walk_${selOpt.key}_${this.animFrame}`);
+          this.animFrame = (this.animFrame + 1) % WALK_FRAMES;
+        },
+      });
+    }
   }
 
   private confirm() {
     if (this.confirmed) return;
     this.confirmed = true;
+    if (this.animTimer) { this.animTimer.remove(); this.animTimer = null; }
     this.sound.play("sfx_select", { volume: 1.0 });
     this.registry.set("character", this.options[this.selected].key);
     this.cameras.main.fadeOut(400, 0, 0, 0);
