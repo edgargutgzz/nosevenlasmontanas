@@ -61,7 +61,7 @@ export class LevelCompleteScene extends Phaser.Scene {
 
     // Mountains background (tileSprite clips naturally to its dimensions)
     if (this.textures.exists("bg_mountains")) {
-      this.add.tileSprite(winX, winY + winH, winW, winH, "bg_mountains")
+      this.add.tileSprite(winX, winY + winH + 60, winW, winH, "bg_mountains")
         .setOrigin(0, 1).setTileScale(winW / 1280);
     }
 
