@@ -78,7 +78,7 @@ export class LevelCompleteScene extends Phaser.Scene {
     this.add.rectangle(W / 2, FLOOR_Y + 10, W, 20, 0x3a1a08);
 
     // Window
-    const winX = 880, winY = 160, winW = 320, winH = 240;
+    const winX = 840, winY = 130, winW = 380, winH = 290;
     this.add.rectangle(winX + winW / 2, winY + winH / 2, winW, winH, 0x87ceeb);
     if (this.textures.exists("bg_mountains")) {
       this.add.tileSprite(winX, winY + winH, winW, winH, "bg_mountains")
@@ -104,7 +104,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       this.add.image(charCX + 70, charY, "other_idle").setOrigin(0.5, 1).setScale(2.2).setFlipX(true);
 
     // ── Dialog box (same style as GameScene) ──────────────────────
-    const accent = 0xff5533;
+    const accent = 0xffffff;
     const boxH   = H * 0.30;
     const boxY   = H - boxH * 0.5 - H * 0.04;
     const boxX   = W * 0.04;
@@ -132,7 +132,7 @@ export class LevelCompleteScene extends Phaser.Scene {
     }).setOrigin(0, 0).setDepth(33);
 
     this.promptText = this.add.text(boxX + boxW - 16, boxY + boxH / 2 - 14, "▼", {
-      fontSize: "12px", fontFamily: FONT, color: "#ff5533",
+      fontSize: "12px", fontFamily: FONT, color: "#ffffff",
     }).setOrigin(1, 1).setDepth(33).setAlpha(0);
     this.tweens.add({ targets: this.promptText, alpha: 1, duration: 400, yoyo: true, repeat: -1 });
 
