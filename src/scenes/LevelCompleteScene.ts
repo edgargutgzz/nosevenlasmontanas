@@ -190,7 +190,7 @@ export class LevelCompleteScene extends Phaser.Scene {
   }
 
   private onAdvance() {
-    if (this.inputEnabled) { this.finish(); return; }
+    if (this.inputEnabled) return;
     if (this.typing) {
       // Skip to end of current line
       this.typeSound.stop();
@@ -211,25 +211,12 @@ export class LevelCompleteScene extends Phaser.Scene {
      this.portrait, this.lineG, this.textObj, this.promptText].forEach(o =>
       this.tweens.add({ targets: o, alpha: 0, duration: 600 })
     );
-    this.time.delayedCall(800, () => {
-      this.inputEnabled = true;
-      const prompt = this.add.text(W / 2, H * 0.88, "PRESIONA PARA CONTINUAR", {
-        fontSize: "14px", fontFamily: FONT, color: "#ffffff",
-      }).setOrigin(0.5).setAlpha(0).setDepth(10);
-      this.tweens.add({ targets: prompt, alpha: 1, duration: 600 });
-      this.tweens.add({ targets: prompt, alpha: 0.2, duration: 900,
-        delay: 600, ease: "Sine.easeInOut", yoyo: true, repeat: -1 });
-    });
-  }
-
-  private finish() {
-    if (!this.inputEnabled) return;
-    this.inputEnabled = false;
-    if (this.cache.audio.exists("sfx_select")) this.sound.play("sfx_select", { volume: 1.0 });
-    this.cameras.main.fadeOut(600, 0, 0, 0);
-    this.cameras.main.once("camerafadeoutcomplete", () => {
-      this.sound.stopAll();
-      this.scene.start("BootScene");
+    this.time.delayedCall(1800, () => {
+      this.cameras.main.fadeOut(1000, 0, 0, 0);
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this.sound.stopAll();
+        this.scene.start("BootScene");
+      });
     });
   }
 }
