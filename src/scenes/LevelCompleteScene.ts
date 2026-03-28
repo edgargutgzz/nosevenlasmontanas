@@ -54,8 +54,23 @@ export class LevelCompleteScene extends Phaser.Scene {
     // ── Room background ───────────────────────────────────────────
     const FLOOR_Y = 540;
 
-    this.add.rectangle(W / 2, FLOOR_Y / 2, W, FLOOR_Y, 0xc9a87a);
+    this.add.rectangle(W / 2, FLOOR_Y / 2, W, FLOOR_Y, 0xb5724a);
     this.add.rectangle(W / 2, FLOOR_Y + (H - FLOOR_Y) / 2, W, H - FLOOR_Y, 0x5a3010);
+
+    // Brick pattern on wall
+    const brickG = this.add.graphics();
+    const bW = 80, bH = 28;
+    for (let row = 0; row * bH < FLOOR_Y; row++) {
+      const offset = (row % 2 === 0) ? 0 : bW / 2;
+      for (let col = -1; col * bW < W + bW; col++) {
+        const bx = col * bW + offset;
+        const by = row * bH;
+        brickG.fillStyle(row % 3 === 0 ? 0xc17a52 : 0xb5724a, 1);
+        brickG.fillRect(bx + 2, by + 2, bW - 4, bH - 4);
+        brickG.lineStyle(1, 0x7a3e20, 0.5);
+        brickG.strokeRect(bx + 2, by + 2, bW - 4, bH - 4);
+      }
+    }
     const woodG = this.add.graphics();
     woodG.lineStyle(1, 0x3a1a08, 0.35);
     for (let y = FLOOR_Y + 18; y < H; y += 18)
