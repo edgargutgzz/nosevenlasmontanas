@@ -26,8 +26,14 @@ export class LevelCompleteScene extends Phaser.Scene {
 
   constructor() { super("LevelCompleteScene"); }
 
+  preload() {
+    if (!this.cache.audio.exists("end_theme"))
+      this.load.audio("end_theme", "/assets/sfx/end_theme.mp3");
+  }
+
   create() {
     this.inputEnabled = false;
+    this.sound.play("end_theme", { loop: true, volume: 0.7 });
 
     // ── Background: warm indoor scene ─────────────────────────────
     this.add.rectangle(W / 2, H / 2, W, H, 0x0d0906);
