@@ -89,7 +89,7 @@ export class GameOverScene extends Phaser.Scene {
 
   private move(dir: number) {
     this.selected = Phaser.Math.Wrap(this.selected + dir, 0, OPTIONS.length);
-    if (this.sound.get("sfx_select")) this.sound.play("sfx_select", { volume: 1.0 });
+    if (this.cache.audio.exists("sfx_select")) this.sound.play("sfx_select", { volume: 1.0 });
     this.inputCooldown = 200;
     this.updateUI();
   }
@@ -116,7 +116,7 @@ export class GameOverScene extends Phaser.Scene {
   private confirm() {
     if (this.confirmed) return;
     this.confirmed = true;
-    if (this.sound.get("sfx_select")) this.sound.play("sfx_select", { volume: 1.0 });
+    if (this.cache.audio.exists("sfx_select")) this.sound.play("sfx_select", { volume: 1.0 });
     this.cameras.main.fadeOut(400, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
       if (OPTIONS[this.selected].key === "level") {
