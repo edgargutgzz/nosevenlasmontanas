@@ -184,14 +184,7 @@ export class DataScene extends Phaser.Scene {
   }
 
   private advance() {
-    const alarm = this.sound.get("sfx_alarm");
-    if (alarm) {
-      this.tweens.add({ targets: alarm, volume: 0, duration: 300, onComplete: () => {
-        alarm.stop();
-        this.scene.start("StartScene");
-      }});
-    } else {
-      this.scene.start("StartScene");
-    }
+    this.sound.stopAll();
+    this.scene.start("StartScene");
   }
 }
