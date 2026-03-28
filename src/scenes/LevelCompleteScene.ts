@@ -11,7 +11,7 @@ const DIALOG: { speaker: "other" | "main"; text: string }[] = [
   { speaker: "other", text: "¿YA VISTE AFUERA?" },
   { speaker: "other", text: "SE ACLARÓ EL CIELO DE NUEVO." },
   { speaker: "other", text: "YA SE VEN LAS MONTAÑAS..." },
-  { speaker: "main",  text: "..." },
+  { speaker: "main",  text: ":)" },
 ];
 
 export class LevelCompleteScene extends Phaser.Scene {
