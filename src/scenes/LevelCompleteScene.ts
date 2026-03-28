@@ -35,32 +35,73 @@ export class LevelCompleteScene extends Phaser.Scene {
     this.inputEnabled = false;
     this.sound.play("end_theme", { loop: true, volume: 0.7 });
 
-    // ── Background: warm indoor scene ─────────────────────────────
-    this.add.rectangle(W / 2, H / 2, W, H, 0x0d0906);
+    // ── Room background ───────────────────────────────────────────
+    const FLOOR_Y = 540;
 
-    // Warm light from above (lamp glow)
-    const glow = this.add.rectangle(W / 2, 0, W * 0.7, H * 0.6, 0xc47a2a).setOrigin(0.5, 0).setAlpha(0.06);
-    this.tweens.add({ targets: glow, alpha: 0.12, duration: 3000, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    // Wall (warm beige)
+    this.add.rectangle(W / 2, FLOOR_Y / 2, W, FLOOR_Y, 0xc9a87a);
 
-    // Floor line
-    this.add.rectangle(W / 2, H * 0.72, W, 3, 0x3a2a1a).setAlpha(0.6);
-    this.add.rectangle(W / 2, H * 0.74 + (H - H * 0.72) / 2, W, H - H * 0.72, 0x1a0e06);
+    // Floor (wood)
+    this.add.rectangle(W / 2, FLOOR_Y + (H - FLOOR_Y) / 2, W, H - FLOOR_Y, 0x5a3010);
+    // Wood grain lines
+    const woodG = this.add.graphics();
+    woodG.lineStyle(1, 0x3a1a08, 0.35);
+    for (let y = FLOOR_Y + 18; y < H; y += 18)
+      woodG.lineBetween(0, y, W, y);
+    // Baseboard
+    this.add.rectangle(W / 2, FLOOR_Y + 10, W, 20, 0x3a1a08);
 
-    // ── Characters ────────────────────────────────────────────────
-    const charY = H * 0.62;
+    // Window (right side of wall) — smoggy sky outside
+    const winX = 880, winY = 160, winW = 320, winH = 240;
+    const winG = this.add.graphics();
+    // Sky outside (smoggy orange-gray)
+    winG.fillStyle(0xb8845a, 1);
+    winG.fillRect(winX, winY, winW, winH);
+    // Smog haze layers
+    winG.fillStyle(0xd4a060, 0.4);
+    winG.fillRect(winX, winY, winW, winH / 2);
+    winG.fillStyle(0x8a6040, 0.3);
+    winG.fillRect(winX, winY + winH / 2, winW, winH / 2);
+    // Window frame (white)
+    winG.lineStyle(10, 0xf0e8d8, 1);
+    winG.strokeRect(winX, winY, winW, winH);
+    // Cross bars
+    winG.lineStyle(6, 0xf0e8d8, 1);
+    winG.lineBetween(winX + winW / 2, winY, winX + winW / 2, winY + winH);
+    winG.lineBetween(winX, winY + winH / 2, winX + winW, winY + winH / 2);
+    // Window sill
+    winG.fillStyle(0xf0e8d8, 1);
+    winG.fillRect(winX - 10, winY + winH, winW + 20, 14);
+
+    // Ceiling lamp
+    const lampG = this.add.graphics();
+    lampG.fillStyle(0x3a2010, 1);
+    lampG.fillRect(W * 0.3 - 2, 0, 4, 40);
+    lampG.fillStyle(0xf0d090, 1);
+    lampG.fillTriangle(W * 0.3 - 28, 40, W * 0.3 + 28, 40, W * 0.3, 80);
+    // Lamp glow
+    const glow = this.add.rectangle(W * 0.3, 80, 300, 200, 0xffe0a0).setOrigin(0.5, 0).setAlpha(0.08);
+    this.tweens.add({ targets: glow, alpha: 0.15, duration: 2500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+
+    // Wall shadow at top
+    this.add.rectangle(W / 2, 0, W, 30, 0x000000).setOrigin(0.5, 0).setAlpha(0.25);
+
+    // ── Characters (standing on floor) ────────────────────────────
+    const charY = FLOOR_Y;
+    const charCX = W * 0.42;
 
     if (this.textures.exists("char_idle")) {
-      this.add.image(W / 2 - 80, charY, "char_idle")
-        .setOrigin(0.5, 1).setScale(2.0).setAlpha(0.92);
+      this.add.image(charCX - 70, charY, "char_idle")
+        .setOrigin(0.5, 1).setScale(2.2);
     }
     if (this.textures.exists("other_idle")) {
-      this.add.image(W / 2 + 80, charY, "other_idle")
-        .setOrigin(0.5, 1).setScale(2.0).setFlipX(true).setAlpha(0.92);
+      this.add.image(charCX + 70, charY, "other_idle")
+        .setOrigin(0.5, 1).setScale(2.2).setFlipX(true);
     }
 
-    // ── Typewriter text ───────────────────────────────────────────
-    const startX = W * 0.08;
-    const startY = H * 0.06;
+    // ── Typewriter text (right panel) ─────────────────────────────
+    const startX = W * 0.55;
+    const startY = H * 0.08;
     const LINE_H = 44;
     const GAP_H  = 22;
     let currentY = startY;
