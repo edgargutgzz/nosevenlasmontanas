@@ -50,7 +50,7 @@ export class BossScene extends Phaser.Scene {
   private smokeParticles: SmokeParticle[] = [];
   private startTime = -1;
 
-  private blinkTween:    Phaser.Tweens.Tween | null = null;
+  private _blinkTween:    Phaser.Tweens.Tween | null = null;
   private criticalTween: Phaser.Tweens.Tween | null = null;
 
   constructor() { super("BossScene"); }

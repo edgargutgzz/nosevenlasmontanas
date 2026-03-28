@@ -854,7 +854,7 @@ export class GameScene extends Phaser.Scene {
     if (this.cache.audio.exists(key)) this.sound.play(key, { volume });
   }
 
-  private showBriefing() {
+  private _showBriefing() {
     const W = this.scale.width;
     const H = this.scale.height;
     this.briefingActive = true;
@@ -993,7 +993,7 @@ export class GameScene extends Phaser.Scene {
     const boxX = W * 0.04;
     const boxW = W * 0.92;
     const accent = 0xff5533;
-    const accentHex = "#ff5533";
+    const _accentHex = "#ff5533";
 
     const dimmer = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.5)
       .setScrollFactor(0).setDepth(30).setAlpha(0);
@@ -1074,7 +1074,7 @@ export class GameScene extends Phaser.Scene {
   private showNewsBanner() {
     const W = this.scale.width;
     const H = this.scale.height;
-    const bannerY = H - 120;
+    const _bannerY = H - 120;
 
     // Congelar player
     this.cutsceneActive = true;
@@ -1271,7 +1271,7 @@ export class GameScene extends Phaser.Scene {
 
   // ── Zona 3: industria ─────────────────────────────────────────────
 
-  private buildIndustrialBackground() {
+  private _buildIndustrialBackground() {
     // chimneys removed
   }
 
@@ -1336,7 +1336,7 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(1200, spawnCar);
   }
 
-  private placeStaticCars() {
+  private _placeStaticCars() {
     const carDefs = [
       { key: "veh_sedan",      scale: 3.2, yOff: 30 },
       { key: "veh_sedan_blue", scale: 3.2, yOff: 30 },
