@@ -38,25 +38,8 @@ export class GameOverScene extends Phaser.Scene {
     const smog = this.add.rectangle(W / 2, H / 2, W, H, 0xcc5500).setAlpha(0.08);
     this.tweens.add({ targets: smog, alpha: 0.18, duration: 3000, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
 
-    // ── Title ─────────────────────────────────────────────────────
-    const title = this.add.text(W / 2, H * 0.26, "SE TE ACABÓ EL AIRE", {
-      fontSize: "38px", fontFamily: FONT,
-      color: "#ff3322",
-      stroke: "#000000", strokeThickness: 6,
-    }).setOrigin(0.5).setAlpha(0);
-
-    this.tweens.add({ targets: title, alpha: 1, duration: 600, ease: "Quad.Out" });
-
-    // ── Subtitle ──────────────────────────────────────────────────
-    const sub = this.add.text(W / 2, H * 0.39, "la contaminación te alcanzó.", {
-      fontSize: "16px", fontFamily: FONT,
-      color: "#888888",
-    }).setOrigin(0.5).setAlpha(0);
-
-    this.tweens.add({ targets: sub, alpha: 1, duration: 600, delay: 300, ease: "Quad.Out" });
-
     // ── Options ───────────────────────────────────────────────────
-    const baseY = H * 0.57;
+    const baseY = H * 0.45;
     const gap   = 70;
 
     OPTIONS.forEach((opt, i) => {
