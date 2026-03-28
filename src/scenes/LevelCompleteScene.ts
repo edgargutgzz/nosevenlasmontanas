@@ -78,7 +78,7 @@ export class LevelCompleteScene extends Phaser.Scene {
     this.add.rectangle(W / 2, FLOOR_Y + 10, W, 20, 0x3a1a08);
 
     // Window
-    const winX = 780, winY = 100, winW = 380, winH = 290;
+    const winX = 720, winY = 100, winW = 380, winH = 290;
     this.add.rectangle(winX + winW / 2, winY + winH / 2, winW, winH, 0x87ceeb);
     if (this.textures.exists("bg_mountains")) {
       this.add.tileSprite(winX, winY + winH, winW, winH, "bg_mountains")
