@@ -18,7 +18,7 @@ const STACKS = [
   { rx: 780, w: 58, h: 280 },
 ];
 
-const BOSS_DURATION   = 8000; // TEMP
+const BOSS_DURATION   = 60000;
 
 type SmokeParticle = {
   img: Phaser.GameObjects.Ellipse;
