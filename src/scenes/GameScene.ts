@@ -405,7 +405,7 @@ export class GameScene extends Phaser.Scene {
     // ── Líneas de carretera (zona ciudad) ─────────────────────────
     const roadG = this.add.graphics().setDepth(2);
     roadG.fillStyle(0xeebb00, 0.7);
-    for (let x = TRANSITION_X; x < REFINERY_X; x += 120) {
+    for (let x = TRANSITION_X; x < LEVEL_WIDTH; x += 120) {
       roadG.fillRect(x, SIDEWALK_Y + 4, 70, 6); // línea central
     }
 
