@@ -54,9 +54,12 @@ export class StartScene extends Phaser.Scene {
     };
 
     // Línea 1 aparece a los 0.8s, línea 2 después, luego prompt
+    // Fade in music during black screen, title appears when it's up
+    const music = this.sound.add("venus", { loop: true, volume: 0 });
+    music.play();
+    this.tweens.add({ targets: music, volume: 0.6, duration: 800, ease: "Sine.easeIn" });
+
     this.time.delayedCall(800, () => {
-      this.sound.stopAll();
-      this.sound.play("venus", { loop: true, volume: 0.6 });
       flicker(line1, () => {
         this.time.delayedCall(400, () => {
           flicker(line2, () => {
