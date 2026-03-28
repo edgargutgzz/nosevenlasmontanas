@@ -59,10 +59,14 @@ export class LevelCompleteScene extends Phaser.Scene {
     // Blue sky behind mountains
     this.add.rectangle(winX + winW / 2, winY + winH / 2, winW, winH, 0x87ceeb);
 
-    // Mountains background (tileSprite clips naturally to its dimensions)
+    // Mountains background — larger, masked to window area
     if (this.textures.exists("bg_mountains")) {
-      this.add.tileSprite(winX, winY + winH + 60, winW, winH, "bg_mountains")
-        .setOrigin(0, 1).setTileScale(winW / 1280);
+      const scale = (winW * 2) / 1280;
+      const mtn = this.add.tileSprite(winX - winW / 2, winY + winH, winW * 2, winH * 2, "bg_mountains")
+        .setOrigin(0, 1).setTileScale(scale);
+      const maskGfx = this.make.graphics({});
+      maskGfx.fillRect(winX, winY, winW, winH);
+      mtn.setMask(maskGfx.createGeometryMask());
     }
 
     // Window frame (white) — drawn on top of the view
