@@ -50,7 +50,6 @@ export class BossScene extends Phaser.Scene {
   private smokeParticles: SmokeParticle[] = [];
   private startTime = -1;
 
-  private _blinkTween:    Phaser.Tweens.Tween | null = null;
   private criticalTween: Phaser.Tweens.Tween | null = null;
 
   constructor() { super("BossScene"); }
@@ -108,7 +107,6 @@ export class BossScene extends Phaser.Scene {
     this.startTime       = -1; // set on first update tick
     this.smokeParticles  = [];
     this.warningLights   = [];
-    this.blinkTween      = null;
     this.criticalTween   = null;
 
     this.physics.world.gravity.y = 600;
