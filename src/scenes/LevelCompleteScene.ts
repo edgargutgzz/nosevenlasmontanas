@@ -29,6 +29,8 @@ export class LevelCompleteScene extends Phaser.Scene {
   preload() {
     if (!this.cache.audio.exists("end_theme"))
       this.load.audio("end_theme", "/assets/sfx/end_theme.mp3");
+    if (!this.textures.exists("bg_mountains"))
+      this.load.image("bg_mountains", "/assets/bg/bg_mountains.png");
   }
 
   create() {
@@ -53,16 +55,18 @@ export class LevelCompleteScene extends Phaser.Scene {
 
     // Window (right side of wall) — smoggy sky outside
     const winX = 880, winY = 160, winW = 320, winH = 240;
+
+    // Blue sky behind mountains
+    this.add.rectangle(winX + winW / 2, winY + winH / 2, winW, winH, 0x87ceeb);
+
+    // Mountains background (tileSprite clips naturally to its dimensions)
+    if (this.textures.exists("bg_mountains")) {
+      this.add.tileSprite(winX, winY + winH, winW, winH, "bg_mountains")
+        .setOrigin(0, 1).setTileScale(winW / 1280);
+    }
+
+    // Window frame (white) — drawn on top of the view
     const winG = this.add.graphics();
-    // Sky outside (smoggy orange-gray)
-    winG.fillStyle(0xb8845a, 1);
-    winG.fillRect(winX, winY, winW, winH);
-    // Smog haze layers
-    winG.fillStyle(0xd4a060, 0.4);
-    winG.fillRect(winX, winY, winW, winH / 2);
-    winG.fillStyle(0x8a6040, 0.3);
-    winG.fillRect(winX, winY + winH / 2, winW, winH / 2);
-    // Window frame (white)
     winG.lineStyle(10, 0xf0e8d8, 1);
     winG.strokeRect(winX, winY, winW, winH);
     // Cross bars
