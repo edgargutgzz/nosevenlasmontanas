@@ -19,7 +19,7 @@ const OPTIONS = [
     label: "DIFICIL",
     group: "POBLACION SENSIBLE",
     desc: "• Ninos menores de 12\n• Adultos mayores\n• Mujeres embarazadas\n• Condiciones cardiovasculares\n  o respiratorias",
-    multiplier: 1.2,
+    multiplier: 0.85,
     accentColor: 0xff5533,
     accentHex: "#ff5533",
     bgSelected: 0x1a0e0b,
