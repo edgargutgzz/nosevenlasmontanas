@@ -121,6 +121,9 @@ export class GameScene extends Phaser.Scene {
     this.briefingActive       = false;
 
     this.sound.stopAll();
+    ["nature_sketch", "danger_sequence", "sfx_siren", "venus"].forEach(k =>
+      this.sound.getAll(k).forEach(s => s.destroy())
+    );
 
     this.difficultyMultiplier = this.registry.get("difficultyMultiplier") ?? 1;
     this.carSpawnerStarted    = false;
@@ -1101,7 +1104,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     // Fade música anterior
-    const music = this.sound.get("nature_sketch");
+    const music = this.sound.getAll("nature_sketch").find(s => s.isPlaying) ?? this.sound.get("nature_sketch");
     if (music) this.tweens.add({ targets: music, volume: 0, duration: 800, onComplete: () => music.stop() });
     this.sfx("sfx_siren", 0.5);
 
@@ -1154,7 +1157,7 @@ export class GameScene extends Phaser.Scene {
         alpha: 0, duration: 600,
         onComplete: () => [boxBg, boxBorder, accentBar, titleLabel, sepLine, tickerText].forEach(o => o.destroy()),
       });
-      const siren = this.sound.get("sfx_siren");
+      const siren = this.sound.getAll("sfx_siren").find(s => s.isPlaying) ?? this.sound.get("sfx_siren");
       if (siren) this.tweens.add({ targets: siren, volume: 0, duration: 800, onComplete: () => siren.stop() });
       this.sound.play("danger_sequence", { loop: true, volume: 0.6 });
       this.time.delayedCall(600, () => this.showOtherCharMessage());
