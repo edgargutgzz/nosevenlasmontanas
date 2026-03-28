@@ -1156,7 +1156,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     // Fade out banner, sirena y liberar player
-    this.time.delayedCall(9000, () => {
+    this.time.delayedCall(10000, () => {
       this.tweens.add({
         targets: [boxBg, boxBorder, accentBar, titleLabel, sepLine, tickerText],
         alpha: 0, duration: 600,
