@@ -936,17 +936,9 @@ export class BossScene extends Phaser.Scene {
       });
     }
 
-    const win = this.add.text(W / 2, H / 2 - 30, "¡FÁBRICA\nDESTRUIDA!", {
-      fontSize: "42px", fontFamily: "'Press Start 2P'",
-      color: "#ffdd00", stroke: "#000000", strokeThickness: 10,
-      align: "center", lineSpacing: 12,
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(55).setAlpha(0);
-
-    this.tweens.add({ targets: win, alpha: 1, duration: 300, delay: 600 });
-
-    this.time.delayedCall(3000, () => {
-      // this.sound.stopAll();
-      this.cameras.main.fadeOut(800, 255, 255, 255);
+    this.time.delayedCall(2500, () => {
+      this.sound.stopAll();
+      this.cameras.main.fadeOut(1200, 0, 0, 0);
       this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("LevelCompleteScene"));
     });
   }
