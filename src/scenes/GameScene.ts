@@ -151,7 +151,7 @@ export class GameScene extends Phaser.Scene {
     this.createGoal(this.goalX);
 
     // ── Player ────────────────────────────────────────────────────
-    this.player = this.physics.add.sprite(this.goalX - 800, GROUND_Y - 300, "char_idle");
+    this.player = this.physics.add.sprite(200, GROUND_Y - 300, "char_idle");
     this.player.setCollideWorldBounds(true);
     this.player.setScale(0.85);
     this.player.setDepth(5);
@@ -442,7 +442,7 @@ export class GameScene extends Phaser.Scene {
     const sectionW = 3200;
     const refineryStartX = LEVEL_WIDTH - 1280;
     for (let sx = TRANSITION_X; sx < LEVEL_WIDTH; sx += sectionW) {
-      this.buildCityscape(sx, GROUND_Y, refineryStartX - 900);
+      this.buildCityscape(sx, GROUND_Y, refineryStartX - 2200);
     }
 
     const canvas = document.createElement("canvas");

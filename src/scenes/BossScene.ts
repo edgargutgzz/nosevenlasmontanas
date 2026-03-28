@@ -918,6 +918,13 @@ export class BossScene extends Phaser.Scene {
   private onBossDefeated() {
     if (this.levelComplete) return;
     this.levelComplete = true;
+
+    // Stop player
+    this.player.setVelocity(0, 0);
+    this.player.setAcceleration(0, 0);
+    (this.player.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
+    this.player.anims.stop();
+
     this.sfx("sfx_goal", 0.9);
 
     // Factory shakes and explosion effect
