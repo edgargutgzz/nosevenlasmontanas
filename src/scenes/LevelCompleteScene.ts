@@ -206,6 +206,7 @@ export class LevelCompleteScene extends Phaser.Scene {
   }
 
   private showFinish() {
+    this.inputEnabled = true;
     this.typeSound.stop();
 
     // Pausa 3s → todo a negro de golpe → créditos

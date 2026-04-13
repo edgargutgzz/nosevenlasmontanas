@@ -260,8 +260,8 @@ export class BossScene extends Phaser.Scene {
       this.sound.play("boss_theme", { loop: true, volume: 0.7 });
     });
 
-    // Release player control and start waves after 1.2s
-    this.time.delayedCall(1200, () => {
+    // Release player control and start waves after landing
+    this.time.delayedCall(300, () => {
       this.levelComplete = false;
       this.startWaves();
     });
@@ -636,24 +636,31 @@ export class BossScene extends Phaser.Scene {
   // ── Smoke ─────────────────────────────────────────────────────────
 
   private startSmoke() {
-    const spawnSmoke = (stackIndex: number) => {
+    const spawnSmoke = (stackIndex: number, lifeOffset = 0) => {
       const s  = STACKS[stackIndex];
       const sx = FAC_X + s.rx + s.w / 2;
       const sy = FAC_Y - s.h - 6;
       const maxLife = Phaser.Math.Between(80, 140);
       const img = this.add.ellipse(
         sx + Phaser.Math.Between(-8, 8),
-        sy,
+        sy - lifeOffset * 1.0,
         Phaser.Math.Between(24, 40),
         Phaser.Math.Between(24, 40),
         0x554433,
-      ).setAlpha(0.4).setDepth(8);
+      ).setAlpha(0.4 * (1 - lifeOffset / maxLife)).setDepth(8);
       this.smokeParticles.push({
-        img, maxLife, life: maxLife,
+        img, maxLife, life: maxLife - lifeOffset,
         vx: Phaser.Math.FloatBetween(-0.4, 0.4),
         vy: Phaser.Math.FloatBetween(-1.2, -0.6),
       });
     };
+
+    // Burst inicial: pre-poblar humo en distintos estados de vida
+    for (let i = 0; i < STACKS.length; i++) {
+      for (let age = 0; age < 8; age++) {
+        spawnSmoke(i, age * 12);
+      }
+    }
 
     this.time.addEvent({
       delay: 180, loop: true,
@@ -684,7 +691,7 @@ export class BossScene extends Phaser.Scene {
     };
 
     // Short intro pause before attacks start
-    this.time.delayedCall(2400, scheduleNext);
+    this.time.delayedCall(300, scheduleNext);
   }
 
   private doAttack(phase: number, LOW: number, MID: number, HIGH: number) {
