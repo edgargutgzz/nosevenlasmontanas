@@ -262,7 +262,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       ease: "Linear",
     });
 
-    this.time.delayedCall(15000, () => {
+    this.time.delayedCall(10000, () => {
       const music = this.sound.getAll("end_theme").find(s => s.isPlaying) ?? this.sound.get("end_theme");
       if (music) {
         this.tweens.add({
