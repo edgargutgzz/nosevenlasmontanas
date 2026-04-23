@@ -40,7 +40,10 @@ export class BootScene extends Phaser.Scene {
     this.cameras.main.fadeIn(400, 0, 0, 0);
 
     this.input.keyboard!.once("keydown", () => this.advance());
-    this.input.gamepad!.on("connected", (pad: Phaser.Input.Gamepad.Gamepad) => { this.pad = pad; });
+    this.input.gamepad!.on("connected", (pad: Phaser.Input.Gamepad.Gamepad) => {
+      this.pad = pad;
+      this.advance();
+    });
     if (this.input.gamepad!.total > 0) this.pad = this.input.gamepad!.getPad(0);
   }
 
