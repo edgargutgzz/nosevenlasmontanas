@@ -7,7 +7,7 @@ const OPTIONS = [
     color: 0x2ecc87,
     colorHex: "#2ecc87",
     bgSelected: 0x0e1a16,
-    multiplier: 0.25,
+    multiplier: 0.50,
   },
   {
     key: "aceptable",
@@ -15,7 +15,7 @@ const OPTIONS = [
     color: 0xf0e040,
     colorHex: "#f0e040",
     bgSelected: 0x1a1a0a,
-    multiplier: 0.5,
+    multiplier: 0.72,
   },
   {
     key: "mala",
@@ -23,7 +23,7 @@ const OPTIONS = [
     color: 0xff8c00,
     colorHex: "#ff8c00",
     bgSelected: 0x1a1000,
-    multiplier: 0.7,
+    multiplier: 0.94,
   },
   {
     key: "muy_mala",
@@ -31,7 +31,7 @@ const OPTIONS = [
     color: 0xff3300,
     colorHex: "#ff3300",
     bgSelected: 0x1a0800,
-    multiplier: 0.85,
+    multiplier: 1.10,
   },
   {
     key: "extremadamente_mala",
@@ -39,7 +39,7 @@ const OPTIONS = [
     color: 0x9b59b6,
     colorHex: "#9b59b6",
     bgSelected: 0x110a1a,
-    multiplier: 1.0,
+    multiplier: 1.43,
   },
 ] as const;
 

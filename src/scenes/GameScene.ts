@@ -804,7 +804,7 @@ export class GameScene extends Phaser.Scene {
   private onHit(damage = 1) {
     if (this.invincible || this.levelComplete) return;
     this.invincible = true;
-    this.health = Math.max(0, this.health - damage * this.difficultyMultiplier);
+    this.health = Math.max(0, this.health - damage * this.difficultyMultiplier * 1.1);
     this.drawHealthBar();
     this.sfx("sfx_hit", 0.7);
     const character = this.registry.get("character") as string ?? "";
