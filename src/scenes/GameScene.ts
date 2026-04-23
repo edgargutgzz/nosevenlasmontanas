@@ -805,7 +805,7 @@ export class GameScene extends Phaser.Scene {
     if (this.invincible || this.levelComplete) return;
     this.invincible = true;
     this.health = Math.max(0, this.health - damage * this.difficultyMultiplier * 1.1);
-    try { (this.input.gamepad?.getPad(0) as any)?.vibrate(300, 1); } catch (_) {}
+    try { (this.input.gamepad?.getPad(0) as any)?.pad?.vibrationActuator?.playEffect("dual-rumble", { duration: 300, strongMagnitude: 1.0, weakMagnitude: 0.5 }); } catch (_) {}
     this.drawHealthBar();
     this.sfx("sfx_hit", 0.7);
     const character = this.registry.get("character") as string ?? "";
