@@ -809,7 +809,6 @@ export class GameScene extends Phaser.Scene {
     this.health = Math.max(0, this.health - damage * this.difficultyMultiplier);
     this.drawHealthBar();
     this.sfx("sfx_hit", 0.7);
-    if (this.input.gamepad?.total) (this.input.gamepad.getPad(0) as any)?.vibrate(300, 1);
     const character = this.registry.get("character") as string ?? "";
     const isFemale  = character.toLowerCase().includes("female");
     const hitKey = isFemale ? "sfx_hit_female" : "sfx_hit_male";
