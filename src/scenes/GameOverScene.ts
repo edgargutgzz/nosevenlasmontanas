@@ -5,8 +5,9 @@ const W      = 1280;
 const H      = 720;
 
 const OPTIONS = [
-  { label: "OTRA VEZ",  key: "level" },
-  { label: "RENDIRSE",  key: "start" },
+  { label: "INTENTAR DE NUEVO", key: "level" },
+  { label: "MENU PRINCIPAL",    key: "menu"  },
+  { label: "SALIR",             key: "start" },
 ] as const;
 
 export class GameOverScene extends Phaser.Scene {
@@ -120,8 +121,11 @@ export class GameOverScene extends Phaser.Scene {
     this.cameras.main.fadeOut(400, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
       this.sound.stopAll();
-      if (OPTIONS[this.selected].key === "level") {
+      const key = OPTIONS[this.selected].key;
+      if (key === "level") {
         this.scene.start(this.from);
+      } else if (key === "menu") {
+        this.scene.start("StartScene");
       } else {
         this.scene.start("BootScene");
       }
