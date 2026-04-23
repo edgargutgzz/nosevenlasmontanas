@@ -19,8 +19,8 @@ const LINES: { text: string; gap?: boolean }[] = [
   { text: "RODEADA POR LA SIERRA MADRE, EL AMM ES CONOCIDA COMO" },
   { text: "LA CIUDAD DE LAS MONTAÑAS." },
   { text: "", gap: true },
-  { text: "PERO HAY DIAS EN QUE LAS MISMAS DESAPARECEN" },
-  { text: "POR COMPLETO." },
+  { text: "SIN EMBARGO, HAY DIAS EN QUE LAS MONTAÑAS" },
+  { text: "DESAPARECEN POR COMPLETO." },
   { text: "", gap: true },
   { text: "EL AIRE AQUI SUPERA 4 VECES LA RECOMENDACION" },
   { text: "SALUDABLE DE PARTICULAS RESPIRABLES PM2.5" },
@@ -30,8 +30,8 @@ const LINES: { text: string; gap?: boolean }[] = [
   { text: "ESTO SE TRADUCE EN 3,000 MUERTES PREMATURAS CADA AÑO." },
   { text: "", gap: true },
   { text: "", gap: true },
-  { text: "SOLO EN ENERO Y FEBRERO DE 2026:" },
-  { text: "EL 60% DE LOS DIAS SE HAN REGISTRADO CON" },
+  { text: "SOLO DE ENERO A MARZO DE 2026:" },
+  { text: "EL 48% DE LOS DIAS SE HAN REGISTRADO CON" },
   { text: "MALA CALIDAD DEL AIRE." },
 ];
 
