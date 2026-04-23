@@ -11,7 +11,10 @@ const PRELOAD_EXTRA = [
 ];
 
 const WALK_FRAMES = 8;
-const WALK_FPS    = 100; // ms por frame
+const WALK_FPS    = 100;
+
+const SCALE_SELECTED   = 2.2;
+const SCALE_UNSELECTED = 1.5;
 
 export class CharacterScene extends Phaser.Scene {
   private selected = 0;
@@ -54,7 +57,6 @@ export class CharacterScene extends Phaser.Scene {
     this.charImages = [];
     this.animFrame = 0;
 
-
     const W = this.scale.width;
     const H = this.scale.height;
 
@@ -88,34 +90,29 @@ export class CharacterScene extends Phaser.Scene {
     // ── Cards ─────────────────────────────────────────────────────
     const cardY  = H * 0.215;
     const cardH  = H * 0.67;
-    const gap    = W * 0.08;
-    const margin = W * 0.19;
+    const gap    = W * 0.06;
+    const margin = W * 0.12;
     const cardW  = (W - margin * 2 - gap) / 2;
     const cardX0 = margin;
 
     this.options.forEach((opt, i) => {
       const cardX = cardX0 + i * (cardW + gap);
 
-      // Sombra
       const shadow = this.add.graphics();
       shadow.fillStyle(0x000000, 0.07);
       shadow.fillRect(cardX + 5, cardY + 5, cardW, cardH);
 
-      // Fondo card
       const bg = this.add.rectangle(cardX, cardY, cardW, cardH, 0x111111).setOrigin(0);
       this.cardBgs.push(bg);
 
-      // Barra de color superior
       this.add.rectangle(cardX, cardY, cardW, 5, this.accentColor).setOrigin(0);
 
-      // Borde
       const border = this.add.graphics();
       this.cardBorders.push(border);
 
-      // Sprite
       const img = this.add.image(cardX + cardW / 2, cardY + cardH / 2, `idle_${opt.key}`)
         .setOrigin(0.5)
-        .setScale(2.2);
+        .setScale(SCALE_UNSELECTED);
       this.charImages.push(img);
     });
 
@@ -159,20 +156,18 @@ export class CharacterScene extends Phaser.Scene {
     const H = this.scale.height;
     const cardY  = H * 0.215;
     const cardH  = H * 0.67;
-    const gap    = W * 0.08;
-    const margin = W * 0.19;
+    const gap    = W * 0.06;
+    const margin = W * 0.12;
     const cardW  = (W - margin * 2 - gap) / 2;
     const cardX0 = margin;
 
     if (this.flashTween) { this.flashTween.stop(); this.flashTween = null; }
     if (this.animTimer)  { this.animTimer.remove(); this.animTimer = null; }
 
-    // Resetear todos los sprites a idle
     this.options.forEach((opt, i) => {
       this.charImages[i].setTexture(`idle_${opt.key}`);
     });
 
-    // Borders y backgrounds
     this.cardBgs.forEach((bg, i) => {
       bg.setFillStyle(i === this.selected ? this.bgSelected : 0x111111);
     });
@@ -185,13 +180,18 @@ export class CharacterScene extends Phaser.Scene {
       g.strokeRect(cardX, cardY, cardW, cardH);
     });
 
+    this.charImages.forEach((img, i) => {
+      const sel = i === this.selected;
+      img.setScale(sel ? SCALE_SELECTED : SCALE_UNSELECTED);
+      img.setAlpha(sel ? 1 : 0.4);
+    });
+
     this.flashTween = this.tweens.add({
       targets: this.cardBorders[this.selected], alpha: 0.4,
       duration: 500, ease: "Sine.easeInOut",
       yoyo: true, repeat: -1,
     });
 
-    // Animación walk en el personaje seleccionado
     const selOpt = this.options[this.selected];
     if (selOpt.hasWalk) {
       this.animFrame = 0;

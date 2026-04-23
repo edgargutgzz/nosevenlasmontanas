@@ -47,7 +47,7 @@ const ROW_H    = 88;
 const ROW_GAP  = 12;
 
 export class DifficultyScene extends Phaser.Scene {
-  private selected = 0;
+  private selected = 2;
   private confirmed = false;
   private inputEnabled = false;
   private inputCooldown = 0;
@@ -56,6 +56,7 @@ export class DifficultyScene extends Phaser.Scene {
   private rowBorders: Phaser.GameObjects.Graphics[] = [];
   private flashTween: Phaser.Tweens.Tween | null = null;
   private airQualityLabel!: Phaser.GameObjects.Text;
+  private rowLabels: Phaser.GameObjects.Text[] = [];
 
   constructor() { super("DifficultyScene"); }
 
@@ -64,12 +65,13 @@ export class DifficultyScene extends Phaser.Scene {
   }
 
   create() {
-    this.selected = 0;
+    this.selected = 2;
     this.confirmed = false;
     this.inputEnabled = false;
     this.inputCooldown = 0;
     this.rowBgs = [];
     this.rowBorders = [];
+    this.rowLabels = [];
 
     if (!this.sound.get("venus")?.isPlaying) {
       this.sound.play("venus", { loop: true, volume: 0.6 });
@@ -116,11 +118,12 @@ export class DifficultyScene extends Phaser.Scene {
       gfx.fillCircle(rowX + 48, ry + ROW_H / 2, circleR);
 
       // Label
-      this.add.text(rowX + 90, ry + ROW_H / 2, opt.label, {
+      const label = this.add.text(rowX + 90, ry + ROW_H / 2, opt.label, {
         fontSize: "18px", fontFamily: "'Press Start 2P'",
         color: opt.colorHex,
         padding: { top: 6, bottom: 6 },
       }).setOrigin(0, 0.5);
+      this.rowLabels.push(label);
     });
 
     // ── "Calidad del Aire" label — repositions to selected row ────
@@ -191,6 +194,12 @@ export class DifficultyScene extends Phaser.Scene {
 
     this.rowBgs.forEach((bg, i) => {
       bg.setFillStyle(i === this.selected ? OPTIONS[i].bgSelected : 0x111111);
+    });
+
+    this.rowLabels.forEach((label, i) => {
+      const sel = i === this.selected;
+      label.setFontSize(sel ? "22px" : "16px");
+      label.setAlpha(sel ? 1 : 0.4);
     });
 
     this.rowBorders.forEach((g, i) => {

@@ -55,10 +55,8 @@ export class GameScene extends Phaser.Scene {
   preload() {
     const character = this.registry.get("character") || "maleAdventurer";
     const otherMap: Record<string, string> = {
-      malePerson:       "femalePerson",
-      femalePerson:     "malePerson",
-      maleAdventurer:   "femaleAdventurer",
-      femaleAdventurer: "maleAdventurer",
+      maleAdventurer:   "femalePerson",
+      femaleAdventurer: "malePerson",
     };
     const otherChar = otherMap[character] ?? "femalePerson";
 
@@ -915,10 +913,8 @@ export class GameScene extends Phaser.Scene {
 
     // ── Name label ────────────────────────────────────────────────
     const nameMap: Record<string, string> = {
-      malePerson:       "HABITANTE",
-      femalePerson:     "HABITANTE",
-      maleAdventurer:   "AVENTURERO",
-      femaleAdventurer: "AVENTURERA",
+      maleAdventurer:   "HABITANTE",
+      femaleAdventurer: "HABITANTE",
     };
     const nameLabel = this.add.text(portraitX, boxY + boxH / 2 - 18, nameMap[character] ?? "HABITANTE", {
       fontSize: "9px", fontFamily: "'Press Start 2P'",
