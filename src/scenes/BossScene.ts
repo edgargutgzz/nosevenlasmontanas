@@ -173,6 +173,7 @@ export class BossScene extends Phaser.Scene {
     // Factory rumble shake at fade-in
     this.time.delayedCall(600, () => {
       this.cameras.main.shake(400, 0.014);
+      try { (this.input.gamepad?.getPad(0) as any)?.pad?.vibrationActuator?.playEffect("dual-rumble", { duration: 400, strongMagnitude: 1.0, weakMagnitude: 0.6 }); } catch (_) {}
     });
 
     // Second shake — factory "waking up"

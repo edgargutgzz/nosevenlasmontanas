@@ -792,6 +792,7 @@ export class GameScene extends Phaser.Scene {
     // Corta música del nivel, shake, arranca BossIntro
     this.sound.stopAll();
     this.cameras.main.shake(250, 0.008);
+    try { (this.input.gamepad?.getPad(0) as any)?.pad?.vibrationActuator?.playEffect("dual-rumble", { duration: 400, strongMagnitude: 0.8, weakMagnitude: 0.4 }); } catch (_) {}
     this.sound.play("sfx_boss_enter", { volume: 0.9 });
 
     // Fade a negro rápido — BossIntro sigue sonando en BossScene
@@ -1105,6 +1106,7 @@ export class GameScene extends Phaser.Scene {
     // Flash rojo + terremoto
     this.cameras.main.flash(180, 255, 0, 0);
     this.cameras.main.shake(600, 0.022);
+    try { (this.input.gamepad?.getPad(0) as any)?.pad?.vibrationActuator?.playEffect("dual-rumble", { duration: 600, strongMagnitude: 1.0, weakMagnitude: 1.0 }); } catch (_) {}
     this.time.delayedCall(220, () => {
       this.cameras.main.flash(180, 255, 0, 0);
       this.cameras.main.shake(400, 0.015);
