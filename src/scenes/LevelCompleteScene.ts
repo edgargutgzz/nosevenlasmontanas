@@ -131,32 +131,19 @@ export class LevelCompleteScene extends Phaser.Scene {
       color: "#cccccc", wordWrap: { width: boxX + boxW - sepX - W * 0.06 }, lineSpacing: 6,
     }).setOrigin(0, 0).setDepth(33);
 
-    this.promptText = this.add.text(boxX + boxW - 16, boxY + boxH / 2 - 14, "▼", {
+    this.promptText = this.add.text(boxX + boxW - 16, boxY + boxH / 2 - 14, "", {
       fontSize: "12px", fontFamily: FONT, color: "#ffffff",
     }).setOrigin(1, 1).setDepth(33).setAlpha(0);
-    this.tweens.add({ targets: this.promptText, alpha: 1, duration: 400, yoyo: true, repeat: -1 });
 
     this.typeSound = this.sound.add("sfx_typewriter", { loop: true, volume: 0.35 });
 
     // Fade in then start dialog
     this.cameras.main.fadeIn(800, 0, 0, 0);
     this.tweens.add({ targets: this.dimmer, alpha: 1, duration: 500, delay: 600 });
-    this.time.delayedCall(1200, () => {
-      this.showDialog(0);
-      // Input
-      this.input.keyboard!.on("keydown", () => this.onAdvance());
-      this.input.gamepad!.on("connected", (p: Phaser.Input.Gamepad.Gamepad) => { this.pad = p; });
-      if (this.input.gamepad!.total > 0) this.pad = this.input.gamepad!.getPad(0);
-    });
+    this.time.delayedCall(1200, () => { this.showDialog(0); });
   }
 
-  update() {
-    if (!this.pad) return;
-    const btn = this.pad.buttons[0]?.pressed || this.pad.buttons[1]?.pressed;
-    if (btn && !this._btnHeld) { this._btnHeld = true; this.onAdvance(); }
-    if (!btn) this._btnHeld = false;
-  }
-  private _btnHeld = false;
+  update() {}
 
   private showDialog(index: number) {
     if (index >= DIALOG.length) { this.showFinish(); return; }
@@ -178,7 +165,10 @@ export class LevelCompleteScene extends Phaser.Scene {
       if (i >= fullText.length) {
         this.typeSound.stop();
         this.typing = false;
-        this.tweens.add({ targets: this.promptText, alpha: 1, duration: 200 });
+        this.time.delayedCall(2000, () => {
+          this.dialogIndex++;
+          this.showDialog(this.dialogIndex);
+        });
         return;
       }
       const ch = fullText[i];
@@ -262,7 +252,7 @@ export class LevelCompleteScene extends Phaser.Scene {
       ease: "Linear",
     });
 
-    this.time.delayedCall(10000, () => {
+    this.time.delayedCall(9000, () => {
       const music = this.sound.getAll("end_theme").find(s => s.isPlaying) ?? this.sound.get("end_theme");
       if (music) {
         this.tweens.add({
