@@ -1,33 +1,50 @@
 import Phaser from "phaser";
 
-// topPad centra verticalmente el bloque de contenido dentro de la card.
-// NORMAL tiene menos líneas que DIFICIL, así que necesita más padding superior.
 const OPTIONS = [
   {
-    key: "normal",
-    label: "NORMAL",
-    group: "POBLACION GENERAL",
-    barLabel: "MENOR RIESGO A LA CONTAMINACION",
-    desc: "",
-    multiplier: 0.5,
-    accentColor: 0x2ecc87,
-    accentHex: "#2ecc87",
+    key: "buena",
+    label: "BUENA",
+    color: 0x2ecc87,
+    colorHex: "#2ecc87",
     bgSelected: 0x0e1a16,
-    bars: 3,
+    multiplier: 0.25,
   },
   {
-    key: "dificil",
-    label: "DIFICIL",
-    group: "POBLACION SENSIBLE",
-    barLabel: "MAYOR RIESGO A LA CONTAMINACION",
-    desc: "• Ninos menores de 12\n• Adultos mayores\n• Mujeres embarazadas\n• Condiciones cardiovasculares\n  o respiratorias",
+    key: "aceptable",
+    label: "ACEPTABLE",
+    color: 0xf0e040,
+    colorHex: "#f0e040",
+    bgSelected: 0x1a1a0a,
+    multiplier: 0.5,
+  },
+  {
+    key: "mala",
+    label: "MALA",
+    color: 0xff8c00,
+    colorHex: "#ff8c00",
+    bgSelected: 0x1a1000,
+    multiplier: 0.7,
+  },
+  {
+    key: "muy_mala",
+    label: "MUY MALA",
+    color: 0xff3300,
+    colorHex: "#ff3300",
+    bgSelected: 0x1a0800,
     multiplier: 0.85,
-    accentColor: 0xff5533,
-    accentHex: "#ff5533",
-    bgSelected: 0x1a0e0b,
-    bars: 9,
+  },
+  {
+    key: "extremadamente_mala",
+    label: "EXTREMADAMENTE MALA",
+    color: 0x9b59b6,
+    colorHex: "#9b59b6",
+    bgSelected: 0x110a1a,
+    multiplier: 1.0,
   },
 ] as const;
+
+const ROW_H    = 88;
+const ROW_GAP  = 12;
 
 export class DifficultyScene extends Phaser.Scene {
   private selected = 0;
@@ -35,9 +52,10 @@ export class DifficultyScene extends Phaser.Scene {
   private inputEnabled = false;
   private inputCooldown = 0;
   private pad: Phaser.Input.Gamepad.Gamepad | null = null;
-  private cardBgs: Phaser.GameObjects.Rectangle[] = [];
-  private cardBorders: Phaser.GameObjects.Graphics[] = [];
+  private rowBgs: Phaser.GameObjects.Rectangle[] = [];
+  private rowBorders: Phaser.GameObjects.Graphics[] = [];
   private flashTween: Phaser.Tweens.Tween | null = null;
+  private airQualityLabel!: Phaser.GameObjects.Text;
 
   constructor() { super("DifficultyScene"); }
 
@@ -50,8 +68,8 @@ export class DifficultyScene extends Phaser.Scene {
     this.confirmed = false;
     this.inputEnabled = false;
     this.inputCooldown = 0;
-    this.cardBgs = [];
-    this.cardBorders = [];
+    this.rowBgs = [];
+    this.rowBorders = [];
 
     if (!this.sound.get("venus")?.isPlaying) {
       this.sound.play("venus", { loop: true, volume: 0.6 });
@@ -73,118 +91,59 @@ export class DifficultyScene extends Phaser.Scene {
     titleGrad.addColorStop(1, "#ff8833");
     titleText.setFill(titleGrad);
 
-    // ── Cards ─────────────────────────────────────────────────────
-    const cardY  = H * 0.15;
-    const cardH  = H * 0.72;
-    const gap    = W * 0.04;
-    const margin = W * 0.06;
-    const cardW  = (W - margin * 2 - gap) / 2;
-    const cardX0 = margin;
+    // ── Rows ──────────────────────────────────────────────────────
+    const totalH = OPTIONS.length * ROW_H + (OPTIONS.length - 1) * ROW_GAP;
+    const startY = Math.round((H - totalH) / 2) + 20;
+    const rowW   = Math.round(W * 0.62);
+    const rowX   = Math.round((W - rowW) / 2);
+    const circleR = 18;
 
     OPTIONS.forEach((opt, i) => {
-      const cardX = cardX0 + i * (cardW + gap);
+      const ry = startY + i * (ROW_H + ROW_GAP);
 
-      // Sombra
-      const shadow = this.add.graphics();
-      shadow.fillStyle(0x000000, 0.07);
-      shadow.fillRect(cardX + 5, cardY + 5, cardW, cardH);
+      const bg = this.add.rectangle(rowX, ry, rowW, ROW_H, 0x111111).setOrigin(0);
+      this.rowBgs.push(bg);
 
-      // Fondo card
-      const bg = this.add.rectangle(cardX, cardY, cardW, cardH, 0x111111).setOrigin(0);
-      this.cardBgs.push(bg);
+      // Top accent bar
+      this.add.rectangle(rowX, ry, rowW, 4, opt.color).setOrigin(0);
 
-      // Barra de color superior
-      this.add.rectangle(cardX, cardY, cardW, 5, opt.accentColor).setOrigin(0);
-
-      // Borde (se actualiza en updateUI)
       const border = this.add.graphics();
-      this.cardBorders.push(border);
+      this.rowBorders.push(border);
 
-      // ── Contenido ───────────────────────────────────────────────
-      const cx    = Math.round(cardX + cardW / 2);
-      const baseY = Math.round(cardY + 40);
+      // Circle
+      const gfx = this.add.graphics();
+      gfx.fillStyle(opt.color, 1);
+      gfx.fillCircle(rowX + 48, ry + ROW_H / 2, circleR);
 
-      // Label de dificultad
-      this.add.text(cardX + 8, baseY, opt.label, {
-        fontSize: "28px", fontFamily: "'Press Start 2P'",
-        color: opt.accentHex,
-        fixedWidth: cardW - 8, align: "center",
-      }).setOrigin(0, 0);
-
-      // Subtítulo de grupo
-      this.add.text(cardX, baseY + 62, opt.group, {
-        fontSize: "9px", fontFamily: "'Press Start 2P'",
-        color: "#ffffff",
-        fixedWidth: cardW, align: "center",
-      }).setOrigin(0, 0);
-
-      // Separador
-      const sep = this.add.graphics();
-      sep.lineStyle(1, 0x222222, 1);
-      sep.lineBetween(cardX + 32, baseY + 90, cardX + cardW - 32, baseY + 90);
-
-      // ── Barra de resistencia estilo Mega Man ───────────────────
-      this.add.text(cardX, baseY + 110, opt.barLabel, {
-        fontSize: "11px", fontFamily: "'Press Start 2P'",
-        color: "#ffffff",
-        wordWrap: { width: cardW * 0.92 }, align: "center", lineSpacing: 6,
-        fixedWidth: cardW,
-      }).setOrigin(0, 0);
-
-      const SEG = 10;
-      const skullSize = 28;
-      const skullGap  = 8;
-      const totalSkullW = SEG * skullSize + (SEG - 1) * skullGap;
-      const skullStartX = Math.round(cx - totalSkullW / 2);
-      const barY = baseY + 152;
-
-      for (let b = 0; b < SEG; b++) {
-        const filled = b < opt.bars;
-        const sx = skullStartX + b * (skullSize + skullGap);
-        this.add.text(sx + skullSize / 2, barY + skullSize / 2, "🤧", {
-          fontSize: `${skullSize}px`, fontFamily: "serif",
-          color: filled ? opt.accentHex : "#333333",
-          align: "center",
-        }).setOrigin(0.5, 0.5).setAlpha(filled ? 1 : 0.3);
-      }
-
-      if (opt.key === "dificil") {
-        const tags = ["NINOS MENORES DE 12", "ADULTOS MAYORES", "MUJERES EMBARAZADAS", "COND. CARDIOVASCULAR\nO RESPIRATORIA"];
-        const tagW = cardW * 0.42;
-        const tagH = 48;
-        const tagGapX = cardW * 0.06;
-        const tagGapY = 14;
-        const startY = barY + skullSize + 90;
-        const col0X = cardX + cardW * 0.04;
-        const col1X = col0X + tagW + tagGapX;
-
-        tags.forEach((label, idx) => {
-          const tx = idx % 2 === 0 ? col0X : col1X;
-          const ty = startY + Math.floor(idx / 2) * (tagH + tagGapY);
-
-          const g = this.add.graphics();
-          g.fillStyle(0xff5533, 0.12);
-          g.fillRect(tx, ty, tagW, tagH);
-          g.lineStyle(1, 0xff5533, 0.8);
-          g.strokeRect(tx, ty, tagW, tagH);
-
-          this.add.text(tx + tagW / 2, ty + tagH / 2, label, {
-            fontSize: "9px", fontFamily: "'Press Start 2P'",
-            color: "#ffffff", align: "center", lineSpacing: 6,
-          }).setOrigin(0.5, 0.5);
-        });
-      }
+      // Label
+      this.add.text(rowX + 90, ry + ROW_H / 2, opt.label, {
+        fontSize: "18px", fontFamily: "'Press Start 2P'",
+        color: opt.colorHex,
+        padding: { top: 6, bottom: 6 },
+      }).setOrigin(0, 0.5);
     });
+
+    // ── "Calidad del Aire" label — repositions to selected row ────
+    const labelRowW = Math.round(W * 0.62);
+    const labelRowX = Math.round((W - labelRowW) / 2);
+    this.airQualityLabel = this.add.text(labelRowX + labelRowW - 12, 0, "CALIDAD DEL AIRE", {
+      fontSize: "9px", fontFamily: "'Press Start 2P'",
+      color: "#888888",
+    }).setOrigin(1, 0.5);
 
     // ── Input ─────────────────────────────────────────────────────
     this.time.delayedCall(300, () => {
       this.inputEnabled = true;
       this.input.keyboard!.on("keydown", (e: KeyboardEvent) => {
         if (!this.inputEnabled || this.confirmed) return;
-        if (e.code === "ArrowLeft" || e.code === "ArrowUp") {
-          this.selected = 0; this.sound.play("sfx_select", { volume: 1.0 }); this.updateUI();
-        } else if (e.code === "ArrowRight" || e.code === "ArrowDown") {
-          this.selected = 1; this.sound.play("sfx_select", { volume: 1.0 }); this.updateUI();
+        if (e.code === "ArrowUp" || e.code === "ArrowLeft") {
+          this.selected = Math.max(0, this.selected - 1);
+          this.sound.play("sfx_select", { volume: 1.0 });
+          this.updateUI();
+        } else if (e.code === "ArrowDown" || e.code === "ArrowRight") {
+          this.selected = Math.min(OPTIONS.length - 1, this.selected + 1);
+          this.sound.play("sfx_select", { volume: 1.0 });
+          this.updateUI();
         } else if (e.code === "Enter" || e.code === "Space") {
           this.confirm();
         }
@@ -202,46 +161,56 @@ export class DifficultyScene extends Phaser.Scene {
     this.inputCooldown -= delta;
     if (this.inputCooldown > 0 || !this.pad) return;
 
-    const left  = this.pad.left;
-    const right = this.pad.right;
-    const btn   = this.pad.buttons[0]?.pressed || this.pad.buttons[1]?.pressed;
+    const up   = this.pad.up   || this.pad.left;
+    const down = this.pad.down || this.pad.right;
+    const btn  = this.pad.buttons[0]?.pressed || this.pad.buttons[1]?.pressed;
 
     if (btn) { this.confirm(); return; }
-    if (left)  { this.selected = 0; this.inputCooldown = 200; this.sound.play("sfx_select", { volume: 1.0 }); this.updateUI(); }
-    else if (right) { this.selected = 1; this.inputCooldown = 200; this.sound.play("sfx_select", { volume: 1.0 }); this.updateUI(); }
+    if (up) {
+      this.selected = Math.max(0, this.selected - 1);
+      this.inputCooldown = 200;
+      this.sound.play("sfx_select", { volume: 1.0 });
+      this.updateUI();
+    } else if (down) {
+      this.selected = Math.min(OPTIONS.length - 1, this.selected + 1);
+      this.inputCooldown = 200;
+      this.sound.play("sfx_select", { volume: 1.0 });
+      this.updateUI();
+    }
   }
 
   private updateUI() {
-    const W = this.scale.width;
-    const H = this.scale.height;
-    const cardY  = H * 0.15;
-    const cardH  = H * 0.72;
-    const gap    = W * 0.04;
-    const margin = W * 0.06;
-    const cardW  = (W - margin * 2 - gap) / 2;
-    const cardX0 = margin;
+    const W    = this.scale.width;
+    const rowW = Math.round(W * 0.62);
+    const rowX = Math.round((W - rowW) / 2);
+    const H    = this.scale.height;
+    const totalH = OPTIONS.length * ROW_H + (OPTIONS.length - 1) * ROW_GAP;
+    const startY = Math.round((H - totalH) / 2) + 20;
 
     if (this.flashTween) { this.flashTween.stop(); this.flashTween = null; }
 
-    this.cardBgs.forEach((bg, i) => {
+    this.rowBgs.forEach((bg, i) => {
       bg.setFillStyle(i === this.selected ? OPTIONS[i].bgSelected : 0x111111);
     });
 
-    this.cardBorders.forEach((g, i) => {
+    this.rowBorders.forEach((g, i) => {
       g.clear();
       const opt = OPTIONS[i];
-      const cardX = cardX0 + i * (cardW + gap);
+      const ry  = startY + i * (ROW_H + ROW_GAP);
       const isSelected = i === this.selected;
-      g.lineStyle(isSelected ? 3 : 1, isSelected ? opt.accentColor : 0x333333, 1);
-      g.strokeRect(cardX, cardY, cardW, cardH);
+      g.lineStyle(isSelected ? 3 : 1, isSelected ? opt.color : 0x333333, 1);
+      g.strokeRect(rowX, ry, rowW, ROW_H);
     });
 
-    const selBorder = this.cardBorders[this.selected];
+    const selBorder = this.rowBorders[this.selected];
     this.flashTween = this.tweens.add({
       targets: selBorder, alpha: 0.4,
       duration: 500, ease: "Sine.easeInOut",
       yoyo: true, repeat: -1,
     });
+
+    const selRy = startY + this.selected * (ROW_H + ROW_GAP);
+    this.airQualityLabel.setY(selRy + 22);
   }
 
   private confirm() {
