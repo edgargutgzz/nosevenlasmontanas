@@ -110,7 +110,7 @@ export class GameScene extends Phaser.Scene {
     // this.load.audio("sfx_hit",        "/assets/sfx/SoundPlayerHit.wav");
     // this.load.audio("sfx_explode",    "/assets/sfx/SoundExplosionSmall.wav");
     // this.load.audio("sfx_goal",       "/assets/sfx/SoundReachGoal.wav");
-    // this.load.audio("sfx_gameover",   "/assets/sfx/SoundGameOver.wav");
+    this.load.audio("sfx_gameover", "/assets/sfx/SoundDeath.wav");
     // this.load.audio("sfx_death", "/assets/sfx/game_over.wav");
   }
 
@@ -841,11 +841,16 @@ export class GameScene extends Phaser.Scene {
 
     if (this.health <= 0) {
       this.levelComplete = true;
-      this.cameras.main.fadeOut(800, 0, 0, 0);
-      this.cameras.main.once("camerafadeoutcomplete", () => {
-        this.sound.stopByKey("sfx_hit_female");
-        this.sound.stopByKey("sfx_hit_male");
-        this.scene.start("GameOverScene", { from: "GameScene" });
+      this.sound.stopAll();
+      this.sound.play("sfx_gameover", { volume: 0.8 });
+      this.cameras.main.flash(200, 255, 0, 0);
+      this.physics.pause();
+      this.time.delayedCall(1500, () => {
+        this.physics.resume();
+        this.cameras.main.fadeOut(800, 0, 0, 0);
+        this.cameras.main.once("camerafadeoutcomplete", () => {
+          this.scene.start("GameOverScene", { from: "GameScene" });
+        });
       });
       return;
     }

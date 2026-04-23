@@ -64,7 +64,7 @@ export class BossScene extends Phaser.Scene {
       ["sfx_hit_male",   "/assets/sfx/sfx_hit_male.wav"],
       ["sfx_explode",    "/assets/sfx/SoundExplosionSmall.wav"],
       ["sfx_goal",       "/assets/sfx/SoundReachGoal.wav"],
-      ["sfx_gameover",   "/assets/sfx/SoundGameOver.wav"],
+      ["sfx_gameover",   "/assets/sfx/SoundDeath.wav"],
       ["sfx_death",      "/assets/sfx/SoundDeath.wav"],
       ["boss_theme",     "/assets/sfx/BossMain.wav"],
       ["winneris",       "/assets/sfx/winneris.ogg"],
@@ -908,11 +908,16 @@ export class BossScene extends Phaser.Scene {
 
     if (this.health <= 0) {
       this.levelComplete = true;
-      this.cameras.main.fadeOut(900, 0, 0, 0);
-      this.cameras.main.once("camerafadeoutcomplete", () => {
-        this.sound.stopByKey("sfx_hit_female");
-        this.sound.stopByKey("sfx_hit_male");
-        this.scene.start("GameOverScene", { from: "BossScene" });
+      this.sound.stopAll();
+      this.sound.play("sfx_gameover", { volume: 0.8 });
+      this.cameras.main.flash(200, 255, 0, 0);
+      this.physics.pause();
+      this.time.delayedCall(1500, () => {
+        this.physics.resume();
+        this.cameras.main.fadeOut(900, 0, 0, 0);
+        this.cameras.main.once("camerafadeoutcomplete", () => {
+          this.scene.start("GameOverScene", { from: "BossScene" });
+        });
       });
       return;
     }

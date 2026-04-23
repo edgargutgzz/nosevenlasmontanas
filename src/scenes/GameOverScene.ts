@@ -35,6 +35,8 @@ export class GameOverScene extends Phaser.Scene {
     // ── Background ────────────────────────────────────────────────
     this.add.rectangle(W / 2, H / 2, W, H, 0x000000);
 
+    this.sound.play("mercury", { loop: true, volume: 0.5 });
+
     // ── Options ───────────────────────────────────────────────────
     const baseY = H * 0.45;
     const gap   = 70;
