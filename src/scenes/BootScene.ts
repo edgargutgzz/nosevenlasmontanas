@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 
 export class BootScene extends Phaser.Scene {
+  private advanced = false;
+  private pad: Phaser.Input.Gamepad.Gamepad | null = null;
+
   constructor() { super("BootScene"); }
 
   preload() {
@@ -16,6 +19,9 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    this.advanced = false;
+    this.pad      = null;
+
     const W = this.scale.width;
     const H = this.scale.height;
 
@@ -33,13 +39,23 @@ export class BootScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(400, 0, 0, 0);
 
-    const advance = () => {
-      this.sound.play("intro_jingle", { loop: false, volume: 0.6 });
-      this.cameras.main.fadeOut(300, 0, 0, 0);
-      this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("DataScene"));
-    };
+    this.input.keyboard!.once("keydown", () => this.advance());
+    this.input.gamepad!.on("connected", (pad: Phaser.Input.Gamepad.Gamepad) => { this.pad = pad; });
+    if (this.input.gamepad!.total > 0) this.pad = this.input.gamepad!.getPad(0);
+  }
 
-    this.input.keyboard!.once("keydown", advance);
-    this.input.gamepad!.once("down", advance);
+  update() {
+    if (this.advanced || !this.pad) return;
+    const btn = this.pad.buttons[0]?.pressed || this.pad.buttons[1]?.pressed
+              || this.pad.left || this.pad.right || this.pad.up || this.pad.down;
+    if (btn) this.advance();
+  }
+
+  private advance() {
+    if (this.advanced) return;
+    this.advanced = true;
+    this.sound.play("intro_jingle", { loop: false, volume: 0.6 });
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("DataScene"));
   }
 }
