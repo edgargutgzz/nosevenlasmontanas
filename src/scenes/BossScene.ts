@@ -877,6 +877,7 @@ export class BossScene extends Phaser.Scene {
     if (this.invincible || this.levelComplete) return;
     this.invincible = true;
     this.health     = Math.max(0, this.health - 1 * this.difficultyMultiplier * 1.65);
+    try { (this.input.gamepad?.getPad(0) as any)?.vibrate(300, 1); } catch (_) {}
     this.drawHealthBar();
     const character = this.registry.get("character") as string ?? "";
     const isFemale  = character.toLowerCase().includes("female");
