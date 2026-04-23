@@ -82,7 +82,7 @@ export class DifficultyScene extends Phaser.Scene {
     this.add.rectangle(0, 0, W, H, 0x000000).setOrigin(0);
 
     // ── Título ────────────────────────────────────────────────────
-    const titleText = this.add.text(W / 2, H * 0.055, "NIVEL DE DIFICULTAD", {
+    const titleText = this.add.text(W / 2, H * 0.08, "NIVEL DE DIFICULTAD", {
       fontSize: "22px", fontFamily: "'Press Start 2P'",
       color: "#ffffff",
     }).setOrigin(0.5, 0);
@@ -93,7 +93,7 @@ export class DifficultyScene extends Phaser.Scene {
 
     // ── Rows ──────────────────────────────────────────────────────
     const totalH = OPTIONS.length * ROW_H + (OPTIONS.length - 1) * ROW_GAP;
-    const startY = Math.round((H - totalH) / 2) + 20;
+    const startY = Math.round((H - totalH) / 2) + 40;
     const rowW   = Math.round(W * 0.62);
     const rowX   = Math.round((W - rowW) / 2);
     const circleR = 18;
@@ -185,7 +185,7 @@ export class DifficultyScene extends Phaser.Scene {
     const rowX = Math.round((W - rowW) / 2);
     const H    = this.scale.height;
     const totalH = OPTIONS.length * ROW_H + (OPTIONS.length - 1) * ROW_GAP;
-    const startY = Math.round((H - totalH) / 2) + 20;
+    const startY = Math.round((H - totalH) / 2) + 40;
 
     if (this.flashTween) { this.flashTween.stop(); this.flashTween = null; }
 

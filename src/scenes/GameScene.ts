@@ -869,10 +869,15 @@ export class GameScene extends Phaser.Scene {
     this.briefingActive = true;
 
     const character = this.registry.get("character") || "maleAdventurer";
-    const difficulty = this.registry.get("difficulty") as "normal" | "dificil" ?? "normal";
-    const isHard = difficulty === "dificil";
-    const accentColor = isHard ? "#ff5533" : "#2ecc87";
-    const accentInt   = isHard ? 0xff5533   : 0x2ecc87;
+    const difficulty = this.registry.get("difficulty") ?? "buena";
+    const DIFFICULTY_COLORS: Record<string, { hex: string; int: number }> = {
+      buena:                { hex: "#2ecc87", int: 0x2ecc87 },
+      aceptable:            { hex: "#f0e040", int: 0xf0e040 },
+      mala:                 { hex: "#ff8c00", int: 0xff8c00 },
+      muy_mala:             { hex: "#ff3300", int: 0xff3300 },
+      extremadamente_mala:  { hex: "#9b59b6", int: 0x9b59b6 },
+    };
+    const { hex: accentColor, int: accentInt } = DIFFICULTY_COLORS[difficulty] ?? DIFFICULTY_COLORS["buena"];
 
     // ── Overlay dimmer ────────────────────────────────────────────
     const dimmer = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.55)

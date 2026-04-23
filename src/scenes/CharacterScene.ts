@@ -1,15 +1,14 @@
 import Phaser from "phaser";
 
-const CHARACTERS = {
-  normal: [
-    { key: "malePerson",   hasWalk: true },
-    { key: "femalePerson", hasWalk: true },
-  ],
-  dificil: [
-    { key: "maleAdventurer",   hasWalk: true },
-    { key: "femaleAdventurer", hasWalk: true  },
-  ],
-} as const;
+const CHARACTERS = [
+  { key: "maleAdventurer",   hasWalk: true },
+  { key: "femaleAdventurer", hasWalk: true },
+];
+
+const PRELOAD_EXTRA = [
+  { key: "malePerson",   hasWalk: true },
+  { key: "femalePerson", hasWalk: true },
+];
 
 const WALK_FRAMES = 8;
 const WALK_FPS    = 100; // ms por frame
@@ -33,8 +32,7 @@ export class CharacterScene extends Phaser.Scene {
   constructor() { super("CharacterScene"); }
 
   preload() {
-    const all = [...CHARACTERS.normal, ...CHARACTERS.dificil];
-    all.forEach(c => {
+    [...CHARACTERS, ...PRELOAD_EXTRA].forEach(c => {
       this.load.image(`idle_${c.key}`, `/assets/character/character_${c.key}_idle.png`);
       if (c.hasWalk) {
         for (let i = 0; i < WALK_FRAMES; i++) {
@@ -60,18 +58,25 @@ export class CharacterScene extends Phaser.Scene {
     const W = this.scale.width;
     const H = this.scale.height;
 
-    const difficulty = this.registry.get("difficulty") as "normal" | "dificil" ?? "normal";
-    this.options = [...CHARACTERS[difficulty]];
+    this.options = [...CHARACTERS];
 
-    const isHard = difficulty === "dificil";
-    this.accentColor = isHard ? 0xff5533 : 0x2ecc87;
-    this.bgSelected  = isHard ? 0x1a0e0b : 0x0e1a16;
+    const difficulty = this.registry.get("difficulty") ?? "buena";
+    const DIFFICULTY_COLORS: Record<string, { accent: number; bg: number }> = {
+      buena:               { accent: 0x2ecc87, bg: 0x0e1a16 },
+      aceptable:           { accent: 0xf0e040, bg: 0x1a1a0a },
+      mala:                { accent: 0xff8c00, bg: 0x1a1000 },
+      muy_mala:            { accent: 0xff3300, bg: 0x1a0800 },
+      extremadamente_mala: { accent: 0x9b59b6, bg: 0x110a1a },
+    };
+    const colors = DIFFICULTY_COLORS[difficulty] ?? DIFFICULTY_COLORS["buena"];
+    this.accentColor = colors.accent;
+    this.bgSelected  = colors.bg;
 
     // ── Background ────────────────────────────────────────────────
     this.add.rectangle(0, 0, W, H, 0x000000).setOrigin(0);
 
     // ── Título ────────────────────────────────────────────────────
-    const titleText = this.add.text(W / 2, H * 0.055, "ELIGE TU PERSONAJE", {
+    const titleText = this.add.text(W / 2, H * 0.08, "ELIGE TU PERSONAJE", {
       fontSize: "22px", fontFamily: "'Press Start 2P'",
       color: "#ffffff",
     }).setOrigin(0.5, 0);
@@ -81,10 +86,10 @@ export class CharacterScene extends Phaser.Scene {
     titleText.setFill(titleGrad);
 
     // ── Cards ─────────────────────────────────────────────────────
-    const cardY  = H * 0.15;
-    const cardH  = H * 0.72;
-    const gap    = W * 0.04;
-    const margin = W * 0.06;
+    const cardY  = H * 0.215;
+    const cardH  = H * 0.67;
+    const gap    = W * 0.08;
+    const margin = W * 0.19;
     const cardW  = (W - margin * 2 - gap) / 2;
     const cardX0 = margin;
 
@@ -152,10 +157,10 @@ export class CharacterScene extends Phaser.Scene {
   private updateUI() {
     const W = this.scale.width;
     const H = this.scale.height;
-    const cardY  = H * 0.15;
-    const cardH  = H * 0.72;
-    const gap    = W * 0.04;
-    const margin = W * 0.06;
+    const cardY  = H * 0.215;
+    const cardH  = H * 0.67;
+    const gap    = W * 0.08;
+    const margin = W * 0.19;
     const cardW  = (W - margin * 2 - gap) / 2;
     const cardX0 = margin;
 
