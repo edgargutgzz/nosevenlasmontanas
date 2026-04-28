@@ -27,8 +27,27 @@ export class BootScene extends Phaser.Scene {
 
     this.add.rectangle(0, 0, W, H, 0x000000).setOrigin(0);
 
-    const prompt = this.add.text(W / 2, H / 2, "PRESIONA PARA INICIAR", {
-      fontSize: "20px", fontFamily: "'Press Start 2P'",
+    const applyGradient = (obj: Phaser.GameObjects.Text) => {
+      const grad = obj.context.createLinearGradient(0, 0, 0, obj.height);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(1, "#ff8833");
+      obj.setFill(grad);
+    };
+
+    const line1 = this.add.text(W / 2, H * 0.30, "NO SE VEN", {
+      fontSize: "52px", fontFamily: "'Press Start 2P'",
+      color: "#ffffff", align: "center",
+    }).setOrigin(0.5);
+    applyGradient(line1);
+
+    const line2 = this.add.text(W / 2, H * 0.30 + 80, "LAS MONTAÑAS", {
+      fontSize: "52px", fontFamily: "'Press Start 2P'",
+      color: "#ffffff", align: "center",
+    }).setOrigin(0.5);
+    applyGradient(line2);
+
+    const prompt = this.add.text(W / 2, H * 0.75, "PRESIONA PARA INICIAR", {
+      fontSize: "16px", fontFamily: "'Press Start 2P'",
       color: "#ffffff",
     }).setOrigin(0.5);
 
