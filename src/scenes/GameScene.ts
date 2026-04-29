@@ -109,7 +109,7 @@ export class GameScene extends Phaser.Scene {
     // this.load.audio("sfx_hit",        "/assets/sfx/SoundPlayerHit.wav");
     // this.load.audio("sfx_explode",    "/assets/sfx/SoundExplosionSmall.wav");
     // this.load.audio("sfx_goal",       "/assets/sfx/SoundReachGoal.wav");
-    this.load.audio("sfx_gameover", "/assets/sfx/SoundGameOver.wav");
+    this.load.audio("sfx_gameover", "/assets/sfx/losetrumpet.ogg");
     // this.load.audio("sfx_death", "/assets/sfx/game_over.wav");
   }
 
