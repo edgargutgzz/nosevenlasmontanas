@@ -2,8 +2,8 @@ import Phaser from "phaser";
 
 const SIDEWALK_Y  = 660;
 const GROUND_Y    = SIDEWALK_Y - 70; // visual top of grass tile = 610
-const LEVEL_WIDTH   = 19800;
-const REFINERY_X    = 17000; // donde paran autos y fábricas
+const LEVEL_WIDTH   = 19200;
+const REFINERY_X    = 15400; // donde paran autos y fábricas
 
 const TRANSITION_X  = 3000; // bosque → ciudad
 const INDUSTRY_X    = 6400; // ciudad → ciudad+autos+industria
@@ -109,7 +109,7 @@ export class GameScene extends Phaser.Scene {
     // this.load.audio("sfx_hit",        "/assets/sfx/SoundPlayerHit.wav");
     // this.load.audio("sfx_explode",    "/assets/sfx/SoundExplosionSmall.wav");
     // this.load.audio("sfx_goal",       "/assets/sfx/SoundReachGoal.wav");
-    this.load.audio("sfx_gameover", "/assets/sfx/losetrumpet.ogg");
+    this.load.audio("sfx_gameover", "/assets/sfx/game_over_1.mp3");
     // this.load.audio("sfx_death", "/assets/sfx/game_over.wav");
   }
 
@@ -428,8 +428,6 @@ export class GameScene extends Phaser.Scene {
       ["tree11", 2020, 1.3],
       ["tree10", 2090, 1.6],
       ["tree02", 2480, 1.5],
-      ["tree11", 2700, 1.8],
-      ["tree10", 2810, 1.2],
     ];
     for (const [key, x, scale] of treeLayout) {
       this.add.image(x, GROUND_Y, key).setOrigin(0.5, 1).setScale(scale).setDepth(1);
@@ -440,7 +438,7 @@ export class GameScene extends Phaser.Scene {
     const sectionW = 3200;
     const refineryStartX = LEVEL_WIDTH - 1280;
     for (let sx = TRANSITION_X; sx < LEVEL_WIDTH; sx += sectionW) {
-      this.buildCityscape(sx, GROUND_Y, refineryStartX - 2200);
+      this.buildCityscape(sx, GROUND_Y, refineryStartX - 1540);
     }
 
     const canvas = document.createElement("canvas");
@@ -459,6 +457,7 @@ export class GameScene extends Phaser.Scene {
 
   private buildCityscape(startX: number, groundY: number, maxX = Infinity) {
     const layout: [string, number, number][] = [
+      ["bld_grey_side",   startX + 80,   1.6],
       ["bld_beige_front", startX + 320,  1.5],
       ["bld_grey_front",  startX + 540,  1.6],
       ["bld_beige_side",  startX + 780,  1.5],
@@ -1077,6 +1076,7 @@ export class GameScene extends Phaser.Scene {
 
     const tickerText = this.add.text(W + 8, boxY + 16, "SE RECOMIENDA NO REALIZAR ACTIVIDADES AL AIRE LIBRE", {
       fontSize: "11px", fontFamily: "'Press Start 2P'", color: "#cccccc",
+      padding: { top: 6, bottom: 2 },
     }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(32).setAlpha(0);
 
     // Fade in
@@ -1231,7 +1231,7 @@ export class GameScene extends Phaser.Scene {
     ];
 
     const spawnCar = () => {
-      if (this.levelComplete || this.player.x >= REFINERY_X) return;
+      if (this.levelComplete || this.player.x >= INDUSTRY_X + 5000) return;
       const def = CAR_KEYS[Math.floor(Math.random() * CAR_KEYS.length)];
       // Spawn slightly off right edge of camera
       const spawnX = this.cameras.main.scrollX + this.scale.width + 100;
@@ -1381,13 +1381,13 @@ export class GameScene extends Phaser.Scene {
     // Progresión: 1 fábrica sola → carros se unen → más fábricas → más difícil
     // [x,     fireDelay, ballCount, vyBoost, scale]
     const factories: [number, number, number, number, number][] = [
-      [6200,  5000, 4,  -0.3, 1.4], // 1ª — pequeña, introduce mechanic
-      [7800,  3500, 4,   0.2, 1.3], // 2ª — normal
-      [8200,  2000, 4,  -0.5, 1.6], // 3ª — grande
-      [10500, 1600, 4,   0.0, 1.5], // 4ª — mediana
-      [12000, 1200, 6,  -0.4, 1.8], // 5ª — muy grande
-      [13500, 1400, 5,   0.3, 1.5], // 6ª
-      [14500, 1100, 6,  -0.3, 1.7], // 7ª — última antes de refinería
+      [6200,  3500, 4,   0.2, 1.4], // 1ª — introduce mechanic
+      [7800,  2800, 4,   0.3, 1.3], // 2ª — sube cadencia
+      [8200,  2200, 5,   0.3, 1.6], // 3ª — más bolas
+      [10500, 1800, 5,   0.4, 1.5], // 4ª — arco más pronunciado
+      [12000, 1400, 6,   0.5, 1.8], // 5ª — muy grande
+      [13500, 1200, 6,   0.4, 1.5], // 6ª — presión alta
+      [14500, 1000, 6,   0.3, 1.7], // 7ª — última, rápida y densa
     ];
     for (let i = 0; i < factories.length; i++) {
       const [x, fireDelay, ballCount, vyBoost, scale] = factories[i];
