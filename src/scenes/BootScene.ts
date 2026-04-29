@@ -78,6 +78,6 @@ export class BootScene extends Phaser.Scene {
     this.advanced = true;
     this.sound.play("intro_jingle", { loop: false, volume: 0.6 });
     this.cameras.main.fadeOut(300, 0, 0, 0);
-    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("CharacterScene"));
+    this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("DataScene"));
   }
 }
