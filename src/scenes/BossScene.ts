@@ -64,7 +64,7 @@ export class BossScene extends Phaser.Scene {
       ["sfx_hit_male",   "/assets/sfx/sfx_hit_male.wav"],
       ["sfx_explode",    "/assets/sfx/SoundExplosionSmall.wav"],
       ["sfx_goal",       "/assets/sfx/SoundReachGoal.wav"],
-      ["sfx_gameover",   "/assets/sfx/SoundDeath.wav"],
+      ["sfx_gameover",   "/assets/sfx/game_over_1.mp3"],
       ["sfx_death",      "/assets/sfx/SoundDeath.wav"],
       ["boss_theme",     "/assets/sfx/BossMain.wav"],
       ["winneris",       "/assets/sfx/winneris.ogg"],
@@ -938,8 +938,6 @@ export class BossScene extends Phaser.Scene {
     (this.player.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
     this.player.anims.stop();
 
-    this.sfx("sfx_goal", 0.9);
-
     // Factory shakes and explosion effect
     this.cameras.main.shake(1000, 0.015);
 
@@ -957,13 +955,11 @@ export class BossScene extends Phaser.Scene {
       });
     }
 
-    this.time.delayedCall(2500, () => {
-      this.sound.stopAll();
-      this.sfx("winneris", 0.8);
-      this.time.delayedCall(4000, () => {
-        this.cameras.main.fadeOut(1200, 0, 0, 0);
-        this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("LevelCompleteScene"));
-      });
+    this.sound.stopAll();
+    this.sfx("winneris", 0.8);
+    this.time.delayedCall(4000, () => {
+      this.cameras.main.fadeOut(1200, 0, 0, 0);
+      this.cameras.main.once("camerafadeoutcomplete", () => this.scene.start("LevelCompleteScene"));
     });
   }
 

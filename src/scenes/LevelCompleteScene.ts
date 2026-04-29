@@ -40,6 +40,20 @@ export class LevelCompleteScene extends Phaser.Scene {
       this.load.audio("sfx_typewriter", "/assets/sfx/typewriter.wav");
     if (!this.textures.exists("bg_mountains"))
       this.load.image("bg_mountains", "/assets/bg/bg_mountains.png");
+
+    if (!this.textures.exists("other_idle")) {
+      const character = this.registry.get("character") || "maleAdventurer";
+      const otherMap: Record<string, string> = {
+        maleAdventurer:   "femalePerson",
+        femaleAdventurer: "malePerson",
+      };
+      const otherChar = otherMap[character] ?? "femalePerson";
+      this.load.image("other_idle", `/assets/character/character_${otherChar}_idle.png`);
+    }
+    if (!this.textures.exists("char_idle")) {
+      const character = this.registry.get("character") || "maleAdventurer";
+      this.load.image("char_idle", `/assets/character/character_${character}_idle.png`);
+    }
   }
 
   create() {
@@ -200,6 +214,8 @@ export class LevelCompleteScene extends Phaser.Scene {
     this.typeSound.stop();
 
     this.time.delayedCall(3000, () => {
+      const endTheme = this.sound.get("end_theme");
+      if (endTheme) this.tweens.add({ targets: endTheme, volume: 0, duration: 2000 });
       this.cameras.main.fadeOut(1200, 0, 0, 0);
       this.cameras.main.once("camerafadeoutcomplete", () => {
         this.sound.stopAll();
