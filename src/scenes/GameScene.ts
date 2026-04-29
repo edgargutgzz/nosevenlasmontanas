@@ -22,11 +22,10 @@ export class GameScene extends Phaser.Scene {
   private pad: Phaser.Input.Gamepad.Gamepad | null = null;
   private wasButtonDown   = false;
   private wasDpadUp       = false;
-  private briefingActive  = false;
-
   private invincible      = false;
   private isCrouching     = false;
   private levelComplete   = false;
+  private controlsOverlay = false;
 
   private jumpsAvailable  = 1;
 
@@ -123,8 +122,7 @@ export class GameScene extends Phaser.Scene {
     this.waveIndex            = 0;
     this.cutsceneActive       = false;
     this.newsBannerShown      = false;
-    this.briefingActive       = false;
-
+    this.controlsOverlay      = false;
     this.sound.stopAll();
     ["nature_sketch", "danger_sequence", "sfx_siren", "venus"].forEach(k =>
       this.sound.getAll(k).forEach(s => s.destroy())
@@ -226,6 +224,9 @@ export class GameScene extends Phaser.Scene {
     ).setScrollFactor(0).setDepth(11);
 
 
+    // ── Controls overlay ──────────────────────────────────────────
+    this._showControlsOverlay();
+
     // ── Input ─────────────────────────────────────────────────────
     this.cursors  = this.input.keyboard!.createCursorKeys();
     this.input.gamepad!.once("connected", (pad: Phaser.Input.Gamepad.Gamepad) => {
@@ -235,12 +236,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   update() {
-    // Briefing dismiss via gamepad
-    if (this.briefingActive && this._briefingDismiss && this._briefingInputEnabled?.()) {
+    if (this.controlsOverlay) {
       const btn = this.pad?.buttons[0]?.pressed || this.pad?.buttons[1]?.pressed;
-      if (btn) { this._briefingDismiss(); return; }
+      if (btn) this._dismissControlsOverlay();
+      return;
     }
-
     if (this.levelComplete) return;
 
     // Parallax bosque
@@ -864,142 +864,71 @@ export class GameScene extends Phaser.Scene {
 
 
 
+  private _overlayObjects: Phaser.GameObjects.GameObject[] = [];
+
+  private _showControlsOverlay() {
+    const W = this.scale.width;
+    const H = this.scale.height;
+    this.controlsOverlay = true;
+
+    const dimmer = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setScrollFactor(0).setDepth(30);
+
+    const cx      = W / 2;
+    const startY  = H / 2 - 80;
+    const rowH    = 46;
+    const symX    = cx - 70;
+    const labelX  = cx + 30;
+
+    const applyGrad = (obj: Phaser.GameObjects.Text) => {
+      const grad = obj.context.createLinearGradient(0, 0, 0, obj.height);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(1, "#ff8833");
+      obj.setFill(grad);
+    };
+
+    const title = this.add.text(cx, startY, "CONTROLES", {
+      fontSize: "14px", fontFamily: "'Press Start 2P'", color: "#ffffff",
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(31);
+    applyGrad(title);
+
+    const rows = [
+      { sym: "B",    label: "SALTAR" },
+      { sym: "◀ ►", label: "MOVERTE" },
+      { sym: "▼",   label: "AGACHARSE" },
+    ];
+
+    const objs: Phaser.GameObjects.GameObject[] = [dimmer, title];
+    rows.forEach(({ sym, label }, i) => {
+      const y = startY + 52 + i * rowH;
+      const s = this.add.text(symX + (i === 1 ? 12 : i === 2 ? -2 : 0), y, sym, {
+        fontSize: "14px", fontFamily: "'Press Start 2P'", color: "#ffffff",
+      }).setOrigin(1, 0).setScrollFactor(0).setDepth(31);
+      applyGrad(s);
+      const l = this.add.text(labelX, y, label, {
+        fontSize: "14px", fontFamily: "'Press Start 2P'", color: "#ffffff",
+      }).setOrigin(0, 0).setScrollFactor(0).setDepth(31);
+      applyGrad(l);
+      objs.push(s, l);
+    });
+
+    this._overlayObjects = objs;
+
+    this.time.delayedCall(500, () => {
+      this.input.keyboard!.once("keydown", () => this._dismissControlsOverlay());
+    });
+  }
+
+  private _dismissControlsOverlay() {
+    if (!this.controlsOverlay) return;
+    this.controlsOverlay = false;
+    this._overlayObjects.forEach(o => o.destroy());
+    this._overlayObjects = [];
+  }
+
   private sfx(key: string, volume = 1) {
     if (this.cache.audio.exists(key)) this.sound.play(key, { volume });
   }
 
-  private _showBriefing() {
-    const W = this.scale.width;
-    const H = this.scale.height;
-    this.briefingActive = true;
-
-    const character = this.registry.get("character") || "maleAdventurer";
-    const difficulty = this.registry.get("difficulty") ?? "buena";
-    const DIFFICULTY_COLORS: Record<string, { hex: string; int: number }> = {
-      buena:                { hex: "#2ecc87", int: 0x2ecc87 },
-      aceptable:            { hex: "#f0e040", int: 0xf0e040 },
-      mala:                 { hex: "#ff8c00", int: 0xff8c00 },
-      muy_mala:             { hex: "#ff3300", int: 0xff3300 },
-      extremadamente_mala:  { hex: "#9b59b6", int: 0x9b59b6 },
-    };
-    const { hex: accentColor, int: accentInt } = DIFFICULTY_COLORS[difficulty] ?? DIFFICULTY_COLORS["buena"];
-
-    // ── Overlay dimmer ────────────────────────────────────────────
-    const dimmer = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.55)
-      .setScrollFactor(0).setDepth(20);
-
-    // ── Dialog box ────────────────────────────────────────────────
-    const boxH    = H * 0.36;
-    const boxY    = H - boxH * 0.5 - H * 0.04;
-    const boxX    = W * 0.04;
-    const boxW    = W * 0.92;
-
-    const boxBg = this.add.rectangle(boxX + boxW / 2, boxY, boxW, boxH, 0x0a0a0a, 0.95)
-      .setScrollFactor(0).setDepth(21);
-    const boxBorder = this.add.graphics().setScrollFactor(0).setDepth(22);
-    boxBorder.lineStyle(2, accentInt, 1);
-    boxBorder.strokeRect(boxX, boxY - boxH / 2, boxW, boxH);
-
-    // Accent top bar
-    const accentBar = this.add.rectangle(boxX + boxW / 2, boxY - boxH / 2, boxW, 3, accentInt, 1)
-      .setScrollFactor(0).setDepth(22);
-
-    // ── Character portrait ────────────────────────────────────────
-    const portraitSize = boxH * 0.78;
-    const portraitX    = boxX + portraitSize * 0.56;
-    const portraitY    = boxY;
-    const portrait = this.add.image(portraitX, portraitY, "char_idle")
-      .setScrollFactor(0).setDepth(23)
-      .setScale(portraitSize / 128);
-
-    // Portrait separator line
-    const sepX = portraitX + portraitSize * 0.56;
-    const lineGfx = this.add.graphics().setScrollFactor(0).setDepth(22);
-    lineGfx.lineStyle(1, accentInt, 0.4);
-    lineGfx.lineBetween(sepX, boxY - boxH / 2 + 10, sepX, boxY + boxH / 2 - 10);
-
-    // ── Name label ────────────────────────────────────────────────
-    const nameMap: Record<string, string> = {
-      maleAdventurer:   "HABITANTE",
-      femaleAdventurer: "HABITANTE",
-    };
-    const nameLabel = this.add.text(portraitX, boxY + boxH / 2 - 18, nameMap[character] ?? "HABITANTE", {
-      fontSize: "9px", fontFamily: "'Press Start 2P'",
-      color: accentColor,
-    }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(23);
-
-    // ── Mission text ──────────────────────────────────────────────
-    const textX    = sepX + W * 0.03;
-    const textMaxW = boxX + boxW - textX - W * 0.03;
-    const textY    = boxY - boxH / 2 + 18;
-
-    const MISSION_LINES = [
-      "MISION:",
-      "",
-      "EL SMOG CUBRE LA CIUDAD.",
-      "CADA SEGUNDO QUE RESPIRAS",
-      "TE ACERCA AL FIN.",
-      "",
-      "ESCAPA ANTES DE QUE",
-      "SEA DEMASIADO TARDE.",
-    ];
-
-    const textObj = this.add.text(textX, textY, "", {
-      fontSize: "13px", fontFamily: "'Press Start 2P'",
-      color: "#cccccc",
-      wordWrap: { width: textMaxW },
-      lineSpacing: 6,
-    }).setOrigin(0, 0).setScrollFactor(0).setDepth(23);
-
-    // Typewriter
-    const fullText = MISSION_LINES.join("\n");
-    let charIdx = 0;
-    const typeChar = () => {
-      if (charIdx >= fullText.length) {
-        showPrompt();
-        return;
-      }
-      charIdx++;
-      textObj.setText(fullText.slice(0, charIdx));
-      this.time.delayedCall(38, typeChar);
-    };
-    this.time.delayedCall(200, typeChar);
-
-    // ── Press to continue prompt ──────────────────────────────────
-    const promptText = this.add.text(boxX + boxW - 10, boxY + boxH / 2 - 12, "PRESIONA PARA CONTINUAR", {
-      fontSize: "9px", fontFamily: "'Press Start 2P'",
-      color: accentColor,
-    }).setOrigin(1, 1).setScrollFactor(0).setDepth(23).setAlpha(0);
-
-    const showPrompt = () => {
-      promptText.setAlpha(1);
-      this.tweens.add({ targets: promptText, alpha: 0.2, duration: 700, ease: "Sine.easeInOut", yoyo: true, repeat: -1 });
-      enableDismiss();
-    };
-
-    // ── Dismiss ───────────────────────────────────────────────────
-    const dismiss = () => {
-      if (!this.briefingActive) return;
-      this.briefingActive = false;
-      [dimmer, boxBg, boxBorder, accentBar, portrait, lineGfx, nameLabel, textObj, promptText].forEach(o => o.destroy());
-      this.levelComplete = false;
-    };
-
-    let inputEnabled = false;
-    const enableDismiss = () => {
-      inputEnabled = true;
-      this.input.keyboard!.once("keydown", () => { if (inputEnabled) dismiss(); });
-    };
-
-    // Gamepad dismiss handled in update via briefingActive flag
-    this._briefingDismiss = dismiss;
-    this._briefingInputEnabled = () => inputEnabled;
-
-  }
-
-  // Briefing dismiss hooks for update()
-  private _briefingDismiss: (() => void) | null = null;
-  private _briefingInputEnabled: (() => boolean) | null = null;
 
   private showOtherCharMessage() {
     const W = this.scale.width;
