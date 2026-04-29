@@ -5,7 +5,7 @@ const GROUND_Y    = SIDEWALK_Y - 70; // visual top of grass tile = 610
 const LEVEL_WIDTH   = 19800;
 const REFINERY_X    = 17000; // donde paran autos y fábricas
 
-const TRANSITION_X  = 3200; // bosque → ciudad
+const TRANSITION_X  = 3000; // bosque → ciudad
 const INDUSTRY_X    = 6400; // ciudad → ciudad+autos+industria
 
 const PROJ_LOW  = GROUND_Y - 28;
@@ -109,7 +109,7 @@ export class GameScene extends Phaser.Scene {
     // this.load.audio("sfx_hit",        "/assets/sfx/SoundPlayerHit.wav");
     // this.load.audio("sfx_explode",    "/assets/sfx/SoundExplosionSmall.wav");
     // this.load.audio("sfx_goal",       "/assets/sfx/SoundReachGoal.wav");
-    this.load.audio("sfx_gameover", "/assets/sfx/SoundDeath.wav");
+    this.load.audio("sfx_gameover", "/assets/sfx/SoundGameOver.wav");
     // this.load.audio("sfx_death", "/assets/sfx/game_over.wav");
   }
 
@@ -459,7 +459,6 @@ export class GameScene extends Phaser.Scene {
 
   private buildCityscape(startX: number, groundY: number, maxX = Infinity) {
     const layout: [string, number, number][] = [
-      ["bld_grey_side",   startX + 80,   1.6],
       ["bld_beige_front", startX + 320,  1.5],
       ["bld_grey_front",  startX + 540,  1.6],
       ["bld_beige_side",  startX + 780,  1.5],
@@ -1076,25 +1075,23 @@ export class GameScene extends Phaser.Scene {
     sepLine.lineStyle(1, accent, 0.35);
     sepLine.lineBetween(boxX + 8, boxY - boxH / 2 + 44, boxX + boxW - 8, boxY - boxH / 2 + 44);
 
-    // Scrolling ticker text — starts at right edge of box
-    const tickerText = this.add.text(boxX + boxW, boxY + 20,
-      "SE RECOMIENDA NO REALIZAR ACTIVIDADES AL AIRE LIBRE   •   PERMANEZCA EN INTERIORES", {
-      fontSize: "13px", fontFamily: "'Press Start 2P'", color: "#ffffff",
+    const tickerText = this.add.text(W + 8, boxY + 16, "SE RECOMIENDA NO REALIZAR ACTIVIDADES AL AIRE LIBRE", {
+      fontSize: "11px", fontFamily: "'Press Start 2P'", color: "#cccccc",
     }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(32).setAlpha(0);
 
     // Fade in
     this.tweens.add({ targets: [boxBg, boxBorder, accentBar, titleLabel, sepLine, tickerText], alpha: 1, duration: 300 });
 
-    // Ticker scrolling
+    // Scroll ticker from right to left
     this.tweens.add({
       targets: tickerText,
-      x: -tickerText.width - 20,
-      duration: 18000,
+      x: -tickerText.width - 8,
+      duration: 12000,
       ease: "Linear",
     });
 
     // Fade out banner, sirena y liberar player
-    this.time.delayedCall(10000, () => {
+    this.time.delayedCall(6000, () => {
       this.tweens.add({
         targets: [boxBg, boxBorder, accentBar, titleLabel, sepLine, tickerText],
         alpha: 0, duration: 600,
