@@ -28,11 +28,7 @@ const LINES: { text: string; gap?: boolean }[] = [
   { text: "", gap: true },
   { text: "", gap: true },
   { text: "ESTO SE TRADUCE EN 3,000 MUERTES PREMATURAS CADA AÑO." },
-  { text: "", gap: true },
-  { text: "", gap: true },
-  { text: "SOLO DE ENERO A MARZO DE 2026:" },
-  { text: "EL 48% DE LOS DIAS SE HAN REGISTRADO CON" },
-  { text: "MALA CALIDAD DEL AIRE." },
+
 ];
 
 export class DataScene extends Phaser.Scene {
@@ -50,7 +46,7 @@ export class DataScene extends Phaser.Scene {
     this.add.rectangle(0, 0, W, H, BG_COLOR).setOrigin(0);
 
     // ── Sonido ────────────────────────────────────────────────────
-    this.time.delayedCall(3000, () => this.sound.play("sfx_alarm", { volume: 0.7 }));
+    this.time.delayedCall(3000, () => this.sound.add("sfx_alarm", { volume: 0.7 }).play());
 
     // ── Layout ────────────────────────────────────────────────────
     const startX    = W * 0.08;
@@ -167,6 +163,18 @@ export class DataScene extends Phaser.Scene {
               targets: closing, alpha: 1,
               duration: 600, ease: "Sine.easeIn",
             });
+          });
+
+          // Fade out de todos los tracks antes de salir
+          this.time.delayedCall(1600, () => {
+            const jingle = this.sound.get("intro_jingle");
+            if (jingle?.isPlaying) {
+              this.tweens.add({ targets: jingle, volume: 0, duration: 2000, onComplete: () => jingle.stop() });
+            }
+            const alarm = this.sound.get("sfx_alarm");
+            if (alarm?.isPlaying) {
+              this.tweens.add({ targets: alarm, volume: 0, duration: 3000, onComplete: () => alarm.stop() });
+            }
           });
 
           this.time.delayedCall(4500, () => this.advance());
