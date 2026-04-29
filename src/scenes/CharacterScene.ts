@@ -75,7 +75,9 @@ export class CharacterScene extends Phaser.Scene {
     this.bgSelected  = colors.bg;
 
     // ── Background ────────────────────────────────────────────────
-    this.add.rectangle(0, 0, W, H, 0x000000).setOrigin(0);
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(0x000000, 0x000000, 0x0d1117, 0x0d1117, 1);
+    bg.fillRect(0, 0, W, H);
 
     // ── Título ────────────────────────────────────────────────────
     const titleText = this.add.text(W / 2, H * 0.12, "ELIGE TU PERSONAJE", {
@@ -88,8 +90,8 @@ export class CharacterScene extends Phaser.Scene {
     titleText.setFill(titleGrad);
 
     // ── Cards ─────────────────────────────────────────────────────
-    const cardY  = H * 0.215;
-    const cardH  = H * 0.67;
+    const cardY  = H * 0.23;
+    const cardH  = H * 0.54;
     const gap    = W * 0.06;
     const margin = W * 0.12;
     const cardW  = (W - margin * 2 - gap) / 2;
@@ -154,8 +156,8 @@ export class CharacterScene extends Phaser.Scene {
   private updateUI() {
     const W = this.scale.width;
     const H = this.scale.height;
-    const cardY  = H * 0.215;
-    const cardH  = H * 0.67;
+    const cardY  = H * 0.23;
+    const cardH  = H * 0.54;
     const gap    = W * 0.06;
     const margin = W * 0.12;
     const cardW  = (W - margin * 2 - gap) / 2;
