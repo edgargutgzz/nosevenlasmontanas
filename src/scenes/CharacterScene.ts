@@ -78,7 +78,7 @@ export class CharacterScene extends Phaser.Scene {
     this.add.rectangle(0, 0, W, H, 0x000000).setOrigin(0);
 
     // ── Título ────────────────────────────────────────────────────
-    const titleText = this.add.text(W / 2, H * 0.08, "ELIGE TU PERSONAJE", {
+    const titleText = this.add.text(W / 2, H * 0.12, "ELIGE TU PERSONAJE", {
       fontSize: "22px", fontFamily: "'Press Start 2P'",
       color: "#ffffff",
     }).setOrigin(0.5, 0);
