@@ -2,7 +2,7 @@ import Phaser from "phaser";
 
 const SIDEWALK_Y  = 660;
 const GROUND_Y    = SIDEWALK_Y - 70; // visual top of grass tile = 610
-const LEVEL_WIDTH   = 19200;
+const LEVEL_WIDTH   = 18700;
 const REFINERY_X    = 15400; // donde paran autos y fábricas
 
 const TRANSITION_X  = 3000; // bosque → ciudad
@@ -438,7 +438,7 @@ export class GameScene extends Phaser.Scene {
     const sectionW = 3200;
     const refineryStartX = LEVEL_WIDTH - 1280;
     for (let sx = TRANSITION_X; sx < LEVEL_WIDTH; sx += sectionW) {
-      this.buildCityscape(sx, GROUND_Y, refineryStartX - 1540);
+      this.buildCityscape(sx, GROUND_Y, 16020);
     }
 
     const canvas = document.createElement("canvas");
